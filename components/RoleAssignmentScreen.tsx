@@ -1,0 +1,147 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useGame } from '@/contexts/GameContext'
+
+export default function RoleAssignmentScreen() {
+  const { gameState, startGame, revealNextPlayer } = useGame()
+  const [wordRevealed, setWordRevealed] = useState(false)
+  const [isHidden, setIsHidden] = useState(true)
+
+  const currentPlayer = gameState.players[gameState.currentRevealIndex]
+
+  useEffect(() => {
+    // Reset reveal state when moving to next player
+    setWordRevealed(false)
+    setIsHidden(true)
+  }, [gameState.currentRevealIndex])
+
+  const handleReveal = () => {
+    setWordRevealed(true)
+    setIsHidden(false)
+  }
+
+  const handleHide = () => {
+    setIsHidden(true)
+  }
+
+  const handleNext = () => {
+    if (gameState.currentRevealIndex < gameState.players.length - 1) {
+      revealNextPlayer()
+    } else {
+      // All players have seen their roles
+      revealNextPlayer() // This will transition to playing phase
+    }
+  }
+
+  const progress = ((gameState.currentRevealIndex + 1) / gameState.players.length) * 100
+
+  if (!currentPlayer) {
+    return null
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl p-8 md:p-12 max-w-md w-full border border-white/20">
+        <div className="mb-6">
+          <div className="flex justify-between text-white/80 text-sm mb-2">
+            <span>Player {gameState.currentRevealIndex + 1} of {gameState.players.length}</span>
+            <span>{Math.round(progress)}%</span>
+          </div>
+          <div className="w-full bg-white/20 rounded-full h-2">
+            <div
+              className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full transition-all duration-300"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
+
+        <div className="text-center mb-6">
+          <h2 className="text-3xl font-bold text-white mb-2">
+            {currentPlayer.name}
+          </h2>
+          <p className="text-white/70 text-lg">
+            Click to see your word
+          </p>
+        </div>
+
+        {!wordRevealed ? (
+          <div className="space-y-6">
+            <div
+              onClick={handleReveal}
+              className="bg-white/5 rounded-lg p-12 text-center border-2 border-dashed border-white/20 cursor-pointer hover:bg-white/10 transition-all"
+            >
+              <div className="text-6xl mb-4">🎭</div>
+              <p className="text-white/80 text-lg">
+                Tap to reveal your word
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {isHidden ? (
+              <div
+                onClick={handleReveal}
+                className="bg-white/5 rounded-lg p-12 text-center border-2 border-dashed border-white/20 cursor-pointer hover:bg-white/10 transition-all"
+              >
+                <div className="text-6xl mb-4">🔒</div>
+                <p className="text-white/80 text-lg">
+                  Word is hidden. Tap to show again.
+                </p>
+              </div>
+            ) : (
+              <div
+                className={`rounded-lg p-8 text-center border-2 ${
+                  currentPlayer.role === 'imposter'
+                    ? 'bg-red-500/20 border-red-500/50'
+                    : 'bg-blue-500/20 border-blue-500/50'
+                }`}
+              >
+                <div className="text-5xl mb-4">
+                  {currentPlayer.role === 'imposter' ? '🕵️' : '👤'}
+                </div>
+                <div className="text-4xl font-bold text-white mb-4">
+                  {currentPlayer.word}
+                </div>
+                <div className="text-xl text-white/90 mb-2">
+                  {currentPlayer.role === 'imposter' ? 'IMPOSTER' : 'CIVILIAN'}
+                </div>
+                <p className="text-white/70 text-sm">
+                  {currentPlayer.role === 'imposter'
+                    ? 'Your word is different! Blend in and avoid detection.'
+                    : 'Find the imposter(s)!'}
+                </p>
+              </div>
+            )}
+
+            <div className="flex gap-3">
+              {!isHidden && (
+                <button
+                  onClick={handleHide}
+                  className="flex-1 bg-white/10 hover:bg-white/20 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 border border-white/20"
+                >
+                  Hide Word
+                </button>
+              )}
+              <button
+                onClick={handleNext}
+                className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg"
+              >
+                {gameState.currentRevealIndex < gameState.players.length - 1
+                  ? 'Pass to Next Player'
+                  : 'Start Round'}
+              </button>
+            </div>
+
+            <div className="bg-yellow-500/20 border border-yellow-500/50 rounded-lg p-4 text-center">
+              <p className="text-yellow-200 text-sm">
+                ⚠️ Make sure no one else sees your word!
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
