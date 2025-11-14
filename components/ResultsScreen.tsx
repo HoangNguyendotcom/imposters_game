@@ -93,7 +93,7 @@ export default function ResultsScreen() {
             className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-4 px-6 rounded-lg text-lg transition-all duration-200 transform hover:scale-105 shadow-lg"
           >
             Play Again (Same Players)
-          </button>
+          </button> 
           <button
             onClick={resetGame}
             className="w-full bg-white/10 hover:bg-white/20 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-200 border border-white/20"

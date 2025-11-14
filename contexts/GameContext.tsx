@@ -21,6 +21,7 @@ export interface GameState {
   playerCount: number
   roundDuration: number // in seconds, 0 means no timer (per player turn)
   players: Player[]
+  originalPlayers: Omit<Player, 'role' | 'word' | 'votes'>[] // Store original players for playAgain
   civilianWord: string | null
   currentRevealIndex: number
   timer: number // remaining seconds
@@ -65,6 +66,7 @@ const defaultGameState: GameState = {
   playerCount: 0,
   roundDuration: 0, // 0 = no timer
   players: [],
+  originalPlayers: [],
   civilianWord: null,
   currentRevealIndex: 0,
   timer: 0,
@@ -139,8 +141,14 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     const players = playersToAssign || gameState.players
     const playerCount = players.length
     const imposterCount = gameState.autoCalculateImposters
-      ? Math.max(1, Math.floor(playerCount / 4))
+      ? 1 // Auto-calculate: always 1 imposter
       : gameState.manualImposterCount
+    
+    // Store original players for playAgain
+    const originalPlayers = players.map((p) => ({
+      id: p.id,
+      name: p.name,
+    }))
     
     // Step 1: Shuffle player array
     const shuffled = [...players].sort(() => Math.random() - 0.5)
@@ -170,6 +178,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     setGameState((prev) => ({
       ...prev,
       players: finalPlayers,
+      originalPlayers, // Store original players
       civilianWord,
       phase: 'reveal-roles',
       currentRevealIndex: 0,
@@ -337,26 +346,33 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   }
 
   const playAgain = () => {
-    // Keep same players but reset game state
-    setGameState((prev) => ({
-      ...prev,
-      phase: 'names',
-      players: prev.players.map((p) => ({
-        id: p.id,
-        name: p.name,
-        role: 'civilian' as PlayerRole,
-        word: '',
-        votes: 0,
-      })),
-      civilianWord: null,
-      currentRevealIndex: 0,
-      timer: 0,
-      currentPlayerIndex: 0,
-      playerTurnTimer: 0,
-      eliminatedPlayerId: null,
-      autoCalculateImposters: true,
-      manualImposterCount: 1,
-    }))
+    // Restore original players and reset game state
+    setGameState((prev) => {
+      // Use originalPlayers if available, otherwise fall back to current players
+      const playersToRestore = prev.originalPlayers.length > 0 
+        ? prev.originalPlayers 
+        : prev.players.map((p) => ({ id: p.id, name: p.name }))
+      
+      return {
+        ...prev,
+        phase: 'names',
+        players: playersToRestore.map((p) => ({
+          id: p.id,
+          name: p.name,
+          role: 'civilian' as PlayerRole,
+          word: '',
+          votes: 0,
+        })),
+        civilianWord: null,
+        currentRevealIndex: 0,
+        timer: 0,
+        currentPlayerIndex: 0,
+        playerTurnTimer: 0,
+        eliminatedPlayerId: null,
+        autoCalculateImposters: true,
+        manualImposterCount: 1,
+      }
+    })
   }
 
   return (
