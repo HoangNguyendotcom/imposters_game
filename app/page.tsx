@@ -8,6 +8,7 @@ import ActiveGameRound from '@/components/ActiveGameRound'
 import VotingScreen from '@/components/VotingScreen'
 import RevealEliminatedScreen from '@/components/RevealEliminatedScreen'
 import ResultsScreen from '@/components/ResultsScreen'
+import AudioManager from '@/components/AudioManager'
 
 function GameContent() {
   const { gameState } = useGame()
@@ -35,6 +36,7 @@ function GameContent() {
 export default function Home() {
   return (
     <GameProvider>
+      <AudioManager />
       <GameContent />
     </GameProvider>
   )
