@@ -109,7 +109,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   const getImposterCount = () => {
     if (gameState.autoCalculateImposters) {
-      return Math.max(1, Math.floor(gameState.playerCount / 4))
+      // Auto-calculate: always 1 imposter
+      return 1
     }
     return gameState.manualImposterCount
   }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useGame } from '@/contexts/GameContext'
 
 export default function SetupScreen() {
@@ -25,13 +25,32 @@ export default function SetupScreen() {
     gameState.roundDuration > 0 ? Math.floor(gameState.roundDuration / 60) : 1
   )
 
-  const autoImposterCount = Math.max(1, Math.floor(count / 4))
-  const maxManualImposters = Math.min(2, Math.floor(count / 2))
+  // Auto-calculate: always 1 imposter
+  const autoImposterCount = 1
+  
+  // Manual imposter options based on player count:
+  // 4-5 players: 1 imposter
+  // 6-8 players: 1 or 2 imposters
+  // 9-10 players: 1, 2, or 3 imposters
+  const getMaxImposters = (playerCount: number): number => {
+    if (playerCount >= 9) return 3
+    if (playerCount >= 6) return 2
+    return 1
+  }
+  
+  const maxManualImposters = getMaxImposters(count)
+
+  // Ensure manualImposters is valid when player count changes or when switching to manual mode
+  useEffect(() => {
+    if (!autoCalculate && manualImposters > maxManualImposters) {
+      setManualImposters(maxManualImposters)
+    }
+  }, [count, autoCalculate, maxManualImposters, manualImposters])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (count >= 4 && count <= 10) {
-      if (!autoCalculate && (manualImposters < 1 || manualImposters > maxManualImposters || manualImposters >= count)) {
+      if (!autoCalculate && (manualImposters < 1 || manualImposters > maxManualImposters)) {
         return
       }
       setPlayerCount(count)
@@ -63,21 +82,61 @@ export default function SetupScreen() {
             >
               Number of Players
             </label>
-            <input
-              type="number"
-              id="playerCount"
-              min="4"
-              max="10"
-              value={count}
-              onChange={(e) => {
-                const newCount = parseInt(e.target.value) || 4
-                setCount(newCount)
-                if (!autoCalculate && manualImposters >= newCount) {
-                  setManualImposters(Math.min(2, Math.floor(newCount / 2)))
-                }
-              }}
-              className="w-full px-4 py-3 rounded-lg bg-white/20 border border-white/30 text-white text-2xl font-bold text-center focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent"
-            />
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  const newCount = Math.max(4, count - 1)
+                  setCount(newCount)
+                  if (!autoCalculate) {
+                    const newMax = getMaxImposters(newCount)
+                    if (manualImposters > newMax) {
+                      setManualImposters(newMax)
+                    }
+                  }
+                }}
+                disabled={count <= 4}
+                className="w-12 h-12 rounded-lg bg-white/20 border border-white/30 text-white text-2xl font-bold hover:bg-white/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              >
+                −
+              </button>
+              <input
+                type="number"
+                id="playerCount"
+                min="4"
+                max="10"
+                value={count}
+                onChange={(e) => {
+                  const newCount = parseInt(e.target.value) || 4
+                  const clampedCount = Math.min(10, Math.max(4, newCount))
+                  setCount(clampedCount)
+                  if (!autoCalculate) {
+                    const newMax = getMaxImposters(clampedCount)
+                    if (manualImposters > newMax) {
+                      setManualImposters(newMax)
+                    }
+                  }
+                }}
+                className="flex-1 px-4 py-3 rounded-lg bg-white/20 border border-white/30 text-white text-2xl font-bold text-center focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  const newCount = Math.min(10, count + 1)
+                  setCount(newCount)
+                  if (!autoCalculate) {
+                    const newMax = getMaxImposters(newCount)
+                    if (manualImposters > newMax) {
+                      setManualImposters(newMax)
+                    }
+                  }
+                }}
+                disabled={count >= 10}
+                className="w-12 h-12 rounded-lg bg-white/20 border border-white/30 text-white text-2xl font-bold hover:bg-white/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              >
+                +
+              </button>
+            </div>
             <p className="text-white/60 text-sm mt-2 text-center">
               Minimum: 4 | Maximum: 10
             </p>
@@ -117,24 +176,33 @@ export default function SetupScreen() {
                   >
                     1 Imposter
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setManualImposters(2)}
-                    disabled={maxManualImposters < 2}
-                    className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-all ${
-                      manualImposters === 2
-                        ? 'bg-gradient-to-r from-red-500 to-pink-500 text-white'
-                        : 'bg-white/10 text-white/70 hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed'
-                    }`}
-                  >
-                    2 Imposters
-                  </button>
+                  {maxManualImposters >= 2 && (
+                    <button
+                      type="button"
+                      onClick={() => setManualImposters(2)}
+                      className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-all ${
+                        manualImposters === 2
+                          ? 'bg-gradient-to-r from-red-500 to-pink-500 text-white'
+                          : 'bg-white/10 text-white/70 hover:bg-white/20'
+                      }`}
+                    >
+                      2 Imposters
+                    </button>
+                  )}
+                  {maxManualImposters >= 3 && (
+                    <button
+                      type="button"
+                      onClick={() => setManualImposters(3)}
+                      className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-all ${
+                        manualImposters === 3
+                          ? 'bg-gradient-to-r from-red-500 to-pink-500 text-white'
+                          : 'bg-white/10 text-white/70 hover:bg-white/20'
+                      }`}
+                    >
+                      3 Imposters
+                    </button>
+                  )}
                 </div>
-                {maxManualImposters < 2 && count < 4 && (
-                  <p className="text-white/60 text-sm mt-2 text-center">
-                    Need at least 4 players for 2 imposters
-                  </p>
-                )}
               </div>
             )}
           </div>
@@ -151,14 +219,36 @@ export default function SetupScreen() {
             </label>
             {timerEnabled && (
               <div className="mt-3">
-                <input
-                  type="number"
-                  min="1"
-                  max="10"
-                  value={timerMinutes}
-                  onChange={(e) => setTimerMinutes(parseInt(e.target.value) || 3)}
-                  className="w-full px-4 py-2 rounded-lg bg-white/20 border border-white/30 text-white text-center focus:outline-none focus:ring-2 focus:ring-white/50"
-                />
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setTimerMinutes(Math.max(1, timerMinutes - 1))}
+                    disabled={timerMinutes <= 1}
+                    className="w-12 h-12 rounded-lg bg-white/20 border border-white/30 text-white text-xl font-bold hover:bg-white/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                  >
+                    −
+                  </button>
+                  <input
+                    type="number"
+                    min="1"
+                    max="10"
+                    value={timerMinutes}
+                    onChange={(e) => {
+                      const minutes = parseInt(e.target.value) || 1
+                      const clampedMinutes = Math.min(10, Math.max(1, minutes))
+                      setTimerMinutes(clampedMinutes)
+                    }}
+                    className="flex-1 px-4 py-2 rounded-lg bg-white/20 border border-white/30 text-white text-xl font-bold text-center focus:outline-none focus:ring-2 focus:ring-white/50"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setTimerMinutes(Math.min(10, timerMinutes + 1))}
+                    disabled={timerMinutes >= 10}
+                    className="w-12 h-12 rounded-lg bg-white/20 border border-white/30 text-white text-xl font-bold hover:bg-white/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                  >
+                    +
+                  </button>
+                </div>
                 <p className="text-white/60 text-sm mt-1 text-center">Minutes</p>
               </div>
             )}
@@ -166,7 +256,7 @@ export default function SetupScreen() {
 
           <button
             type="submit"
-            disabled={!autoCalculate && (manualImposters >= count || manualImposters < 1)}
+            disabled={!autoCalculate && (manualImposters < 1 || manualImposters > maxManualImposters)}
             className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-4 px-6 rounded-lg text-lg transition-all duration-200 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
           >
             Continue
