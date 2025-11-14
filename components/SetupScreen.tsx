@@ -51,12 +51,9 @@ export default function SetupScreen() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl p-8 md:p-12 max-w-md w-full border border-white/20">
-        <h1 className="text-4xl md:text-5xl font-bold text-white text-center mb-2">
-          Imposters Game
+        <h1 className="text-3xl md:text-5xl font-bold text-white text-center mb-2">
+        Imposters? 🤔
         </h1>
-        <p className="text-white/80 text-center mb-8">
-          Vietnamese Word Game
-        </p>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
