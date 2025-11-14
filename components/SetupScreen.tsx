@@ -20,9 +20,9 @@ export default function SetupScreen() {
   const [manualImposters, setManualImposters] = useState(
     gameState.manualImposterCount || 1
   )
-  const [timerEnabled, setTimerEnabled] = useState(gameState.roundDuration > 0)
+  const [timerEnabled, setTimerEnabled] = useState(true) // Default to enabled
   const [timerMinutes, setTimerMinutes] = useState(
-    gameState.roundDuration > 0 ? Math.floor(gameState.roundDuration / 60) : 3
+    gameState.roundDuration > 0 ? Math.floor(gameState.roundDuration / 60) : 1
   )
 
   const autoImposterCount = Math.max(1, Math.floor(count / 4))
