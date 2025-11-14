@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useGame } from '@/contexts/GameContext'
 
 export default function VotingScreen() {
-  const { gameState, vote, eliminatePlayer } = useGame()
+  const { gameState, vote, eliminatePlayer, continueAfterTie } = useGame()
   const [currentVoterIndex, setCurrentVoterIndex] = useState(0)
   const [votingComplete, setVotingComplete] = useState(false)
   const [showVoteResults, setShowVoteResults] = useState(false)
@@ -31,13 +31,26 @@ export default function VotingScreen() {
     // Calculate who was voted out
     const sortedByVotes = [...gameState.players].sort((a, b) => b.votes - a.votes)
     const mostVoted = sortedByVotes[0]
-    // Eliminate the player (this will transition to reveal-eliminated phase)
-    eliminatePlayer(mostVoted.id)
+    const secondMostVoted = sortedByVotes[1]
+    
+    // Check if there's a tie between top 2 players
+    const isTie = secondMostVoted && mostVoted.votes === secondMostVoted.votes && mostVoted.votes > 0
+    
+    if (isTie) {
+      // No one is eliminated, continue playing
+      continueAfterTie()
+    } else {
+      // Eliminate the player (this will transition to reveal-eliminated phase)
+      eliminatePlayer(mostVoted.id)
+    }
   }
 
   // Show vote results first
   if (votingComplete && showVoteResults && gameState.phase === 'voting') {
     const sortedByVotes = [...gameState.players].sort((a, b) => b.votes - a.votes)
+    const mostVoted = sortedByVotes[0]
+    const secondMostVoted = sortedByVotes[1]
+    const isTie = secondMostVoted && mostVoted.votes === secondMostVoted.votes && mostVoted.votes > 0
     
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
@@ -46,13 +59,28 @@ export default function VotingScreen() {
             Vote Results
           </h1>
 
+          {isTie && (
+            <div className="mb-6 bg-yellow-500/20 border-2 border-yellow-500/50 rounded-lg p-6 text-center">
+              <div className="text-5xl mb-4">⚖️</div>
+              <h2 className="text-2xl font-bold text-white mb-2">Tie Vote!</h2>
+              <p className="text-white/80">
+                {mostVoted.name} and {secondMostVoted.name} both have {mostVoted.votes} {mostVoted.votes === 1 ? 'vote' : 'votes'}
+              </p>
+              <p className="text-white/70 text-sm mt-2">No one is eliminated. The game continues!</p>
+            </div>
+          )}
+
           <div className="mb-8">
             <h2 className="text-2xl font-semibold text-white mb-4">All Votes:</h2>
             <div className="space-y-3">
               {sortedByVotes.map((player) => (
                 <div
                   key={player.id}
-                  className="bg-white/10 rounded-lg p-4 flex justify-between items-center"
+                  className={`bg-white/10 rounded-lg p-4 flex justify-between items-center ${
+                    isTie && (player.id === mostVoted.id || player.id === secondMostVoted.id)
+                      ? 'border-2 border-yellow-500/50'
+                      : ''
+                  }`}
                 >
                   <span className="text-white font-medium text-lg">{player.name}</span>
                   <span className="text-2xl font-bold text-purple-300">
@@ -65,9 +93,13 @@ export default function VotingScreen() {
 
           <button
             onClick={handleShowEliminated}
-            className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold py-4 px-6 rounded-lg text-lg transition-all duration-200 transform hover:scale-105 shadow-lg"
+            className={`w-full font-bold py-4 px-6 rounded-lg text-lg transition-all duration-200 transform hover:scale-105 shadow-lg ${
+              isTie
+                ? 'bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white'
+                : 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white'
+            }`}
           >
-            Reveal Eliminated Player
+            {isTie ? 'Continue Playing' : 'Reveal Eliminated Player'}
           </button>
         </div>
       </div>

@@ -55,6 +55,7 @@ interface GameContextType {
   updateTimer: (seconds: number) => void
   updatePlayerTurnTimer: (seconds: number) => void
   getImposterCount: () => number
+  continueAfterTie: () => void
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined)
@@ -345,6 +346,21 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem(STORAGE_KEY)
   }
 
+  const continueAfterTie = () => {
+    // Reset votes and continue playing after a tie
+    setGameState((prev) => ({
+      ...prev,
+      phase: 'playing',
+      players: prev.players.map((p) => ({
+        ...p,
+        votes: 0,
+        votedFor: undefined,
+      })),
+      currentPlayerIndex: 0,
+      playerTurnTimer: prev.roundDuration,
+    }))
+  }
+
   const playAgain = () => {
     // Restore original players and reset game state
     setGameState((prev) => {
@@ -400,6 +416,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         updateTimer,
         updatePlayerTurnTimer,
         getImposterCount,
+        continueAfterTie,
       }}
     >
       {children}
