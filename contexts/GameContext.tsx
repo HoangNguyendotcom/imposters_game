@@ -78,22 +78,21 @@ const defaultGameState: GameState = {
 export function GameProvider({ children }: { children: React.ReactNode }) {
   const [gameState, setGameState] = useState<GameState>(defaultGameState)
 
-  // Load from localStorage on mount
+  // Clear localStorage on mount to reset state on every page load/refresh
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY)
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved)
-        setGameState(parsed)
-      } catch (e) {
-        console.error('Failed to load game state:', e)
-      }
-    }
+    // Clear any saved state on page load/refresh
+    localStorage.removeItem(STORAGE_KEY)
+    // Reset to default state
+    setGameState(defaultGameState)
   }, [])
 
-  // Save to localStorage whenever gameState changes
+  // Save to localStorage whenever gameState changes (but only during active session)
+  // Note: This will be cleared on next page load/refresh
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(gameState))
+    // Only save if not in default/initial state
+    if (gameState.phase !== 'setup' || gameState.playerCount > 0) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(gameState))
+    }
   }, [gameState])
 
   const setPlayerCount = (count: number) => {
