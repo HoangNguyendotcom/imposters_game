@@ -64,9 +64,8 @@ export default function VotingScreen() {
               <div className="text-5xl mb-4">⚖️</div>
               <h2 className="text-2xl font-bold text-white mb-2">Tie Vote!</h2>
               <p className="text-white/80">
-                {mostVoted.name} and {secondMostVoted.name} both have {mostVoted.votes} {mostVoted.votes === 1 ? 'vote' : 'votes'}
+                    No one is eliminated. The game continues!
               </p>
-              <p className="text-white/70 text-sm mt-2">No one is eliminated. The game continues!</p>
             </div>
           )}
 
