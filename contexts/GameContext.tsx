@@ -1,11 +1,11 @@
 'use client'
 
 import React, { createContext, useContext, useState, useEffect } from 'react'
-import { getRandomCivilianWord, IMPOSTER_WORD } from '@/data/vietnameseWords'
+import { getRandomCivilianWord, getRandomWordPair, IMPOSTER_WORD } from '@/data/vietnameseWords'
 
 export type GamePhase = 'setup' | 'names' | 'reveal-roles' | 'playing' | 'voting' | 'reveal-eliminated' | 'results'
 
-export type PlayerRole = 'civilian' | 'imposter'
+export type PlayerRole = 'civilian' | 'imposter' | 'spy'
 
 export interface Player {
   id: string
@@ -30,6 +30,9 @@ export interface GameState {
   eliminatedPlayerId: string | null // ID of the eliminated player
   autoCalculateImposters: boolean // true = auto-calculate, false = manual
   manualImposterCount: number // manual imposter count (only used if autoCalculateImposters is false)
+  hasSpy: boolean // true = enable spy role
+  spyWord: string | null // word assigned to spy (word1 or word2 from pair)
+  imposterHint: string | null // hint assigned to imposters when spy is enabled
 }
 
 interface GameContextType {
@@ -38,6 +41,7 @@ interface GameContextType {
   setRoundDuration: (duration: number) => void
   setAutoCalculateImposters: (auto: boolean) => void
   setManualImposterCount: (count: number) => void
+  setHasSpy: (hasSpy: boolean) => void
   setPlayers: (players: Omit<Player, 'role' | 'word' | 'votes'>[]) => void
   setPhase: (phase: GamePhase) => void
   assignRoles: (players?: Omit<Player, 'role' | 'word' | 'votes'>[]) => void
@@ -49,7 +53,7 @@ interface GameContextType {
   eliminatePlayer: (playerId: string) => void
   processElimination: () => void
   checkGameEnd: (eliminatedPlayerId?: string) => boolean
-  calculateResults: () => { civiliansWon: boolean; votedOutPlayer: Player | null }
+  calculateResults: () => { winner: 'civilians' | 'imposters' | 'spy'; votedOutPlayer: Player | null }
   resetGame: () => void
   playAgain: () => void
   updateTimer: (seconds: number) => void
@@ -76,6 +80,9 @@ const defaultGameState: GameState = {
   eliminatedPlayerId: null,
   autoCalculateImposters: true,
   manualImposterCount: 1,
+  hasSpy: false,
+  spyWord: null,
+  imposterHint: null,
 }
 
 export function GameProvider({ children }: { children: React.ReactNode }) {
@@ -108,6 +115,10 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   const setManualImposterCount = (count: number) => {
     setGameState((prev) => ({ ...prev, manualImposterCount: count }))
+  }
+
+  const setHasSpy = (hasSpy: boolean) => {
+    setGameState((prev) => ({ ...prev, hasSpy }))
   }
 
   const getImposterCount = () => {
@@ -154,36 +165,96 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     // Step 1: Shuffle player array
     const shuffled = [...players].sort(() => Math.random() - 0.5)
     
-    // Step 2: Assign first N players as imposters, rest as civilians
-    const playersWithRoles = shuffled.map((player, index) => {
-      const isImposter = index < imposterCount
-      return {
+    let civilianWord: string | null = null
+    let spyWord: string | null = null
+    let imposterHint: string | null = null
+    
+    if (gameState.hasSpy) {
+      // Spy mode: use word pairs
+      const wordPair = getRandomWordPair()
+      civilianWord = wordPair.word1 // Civilians get word1
+      spyWord = wordPair.word2 // Spy gets word2
+      imposterHint = wordPair.hint // Imposters get hint
+      
+      // Step 2: Assign roles (imposters, spy, civilians)
+      // First N are imposters, next 1 is spy (if hasSpy), rest are civilians
+      const playersWithRoles = shuffled.map((player, index) => {
+        if (index < imposterCount) {
+          return {
+            ...player,
+            role: 'imposter' as PlayerRole,
+            word: imposterHint || IMPOSTER_WORD, // Fallback to IMPOSTER_WORD if null
+            votes: 0,
+            votedFor: undefined,
+          }
+        } else if (index === imposterCount) {
+          // One spy
+          return {
+            ...player,
+            role: 'spy' as PlayerRole,
+            word: spyWord || '', // Fallback to empty string if null
+            votes: 0,
+            votedFor: undefined,
+          }
+        } else {
+          return {
+            ...player,
+            role: 'civilian' as PlayerRole,
+            word: civilianWord || '', // Fallback to empty string if null
+            votes: 0,
+            votedFor: undefined,
+          }
+        }
+      })
+      
+      // Step 3: Shuffle again to randomize order
+      const finalPlayers = playersWithRoles.sort(() => Math.random() - 0.5)
+      
+      setGameState((prev) => ({
+        ...prev,
+        players: finalPlayers,
+        originalPlayers,
+        civilianWord,
+        spyWord,
+        imposterHint,
+        phase: 'reveal-roles',
+        currentRevealIndex: 0,
+      }))
+    } else {
+      // Normal mode: no spy
+      // Step 2: Assign first N players as imposters, rest as civilians
+      const playersWithRoles = shuffled.map((player, index) => {
+        const isImposter = index < imposterCount
+        return {
+          ...player,
+          role: (isImposter ? 'imposter' : 'civilian') as PlayerRole,
+          word: isImposter ? IMPOSTER_WORD : '', // Will be set to civilian word below
+          votes: 0,
+          votedFor: undefined,
+        }
+      })
+      
+      // Step 3: Shuffle again to randomize order
+      const finalShuffled = playersWithRoles.sort(() => Math.random() - 0.5)
+      
+      // Step 4: Get random civilian word and assign to all civilians
+      civilianWord = getRandomCivilianWord()
+      const finalPlayers = finalShuffled.map((player) => ({
         ...player,
-        role: (isImposter ? 'imposter' : 'civilian') as PlayerRole,
-        word: isImposter ? IMPOSTER_WORD : '', // Will be set to civilian word below
-        votes: 0,
-        votedFor: undefined,
-      }
-    })
-    
-    // Step 3: Shuffle again to randomize order
-    const finalShuffled = playersWithRoles.sort(() => Math.random() - 0.5)
-    
-    // Step 4: Get random civilian word and assign to all civilians
-    const civilianWord = getRandomCivilianWord()
-    const finalPlayers = finalShuffled.map((player) => ({
-      ...player,
-      word: player.role === 'civilian' ? civilianWord : IMPOSTER_WORD,
-    }))
+        word: player.role === 'civilian' ? (civilianWord || '') : IMPOSTER_WORD,
+      }))
 
-    setGameState((prev) => ({
-      ...prev,
-      players: finalPlayers,
-      originalPlayers, // Store original players
-      civilianWord,
-      phase: 'reveal-roles',
-      currentRevealIndex: 0,
-    }))
+      setGameState((prev) => ({
+        ...prev,
+        players: finalPlayers,
+        originalPlayers,
+        civilianWord,
+        spyWord: null,
+        imposterHint: null,
+        phase: 'reveal-roles',
+        currentRevealIndex: 0,
+      }))
+    }
   }
 
   const revealNextPlayer = () => {
@@ -274,12 +345,16 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       const updatedPlayers = prev.players.filter((p) => p.id !== prev.eliminatedPlayerId)
       const imposters = updatedPlayers.filter((p) => p.role === 'imposter')
       const civilians = updatedPlayers.filter((p) => p.role === 'civilian')
+      const spies = updatedPlayers.filter((p) => p.role === 'spy')
       
       // Check win conditions after elimination
       const allImpostersEliminated = imposters.length === 0
       const civiliansEqualImposters = civilians.length === imposters.length && imposters.length > 0
       
-      if (allImpostersEliminated || civiliansEqualImposters) {
+      // Spy win condition: all imposters eliminated AND spies == civilians
+      const spyWins = prev.hasSpy && allImpostersEliminated && spies.length > 0 && spies.length === civilians.length
+      
+      if (allImpostersEliminated || civiliansEqualImposters || spyWins) {
         // Game ends
         return {
           ...prev,
@@ -316,23 +391,41 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     // Otherwise check current state
     const imposters = gameState.players.filter((p) => p.role === 'imposter')
     const civilians = gameState.players.filter((p) => p.role === 'civilian')
+    const spies = gameState.players.filter((p) => p.role === 'spy')
     
     const allImpostersEliminated = imposters.length === 0
     const civiliansEqualImposters = civilians.length === imposters.length && imposters.length > 0
     
-    return allImpostersEliminated || civiliansEqualImposters
+    // Spy win condition: all imposters eliminated AND spies == civilians
+    const spyWins = gameState.hasSpy && allImpostersEliminated && spies.length > 0 && spies.length === civilians.length
+    
+    return allImpostersEliminated || civiliansEqualImposters || spyWins
   }
 
   const calculateResults = () => {
     const imposters = gameState.players.filter((p) => p.role === 'imposter')
     const civilians = gameState.players.filter((p) => p.role === 'civilian')
+    const spies = gameState.players.filter((p) => p.role === 'spy')
     
-    // Civilians win if all imposters are eliminated
-    // Imposters win if civilians == imposters
-    const civiliansWon = imposters.length === 0
+    const allImpostersEliminated = imposters.length === 0
+    const civiliansEqualImposters = civilians.length === imposters.length && imposters.length > 0
+    
+    // Determine winner
+    let winner: 'civilians' | 'imposters' | 'spy' = 'imposters'
+    
+    if (gameState.hasSpy && allImpostersEliminated && spies.length > 0 && spies.length === civilians.length) {
+      // Spy wins: all imposters eliminated AND spies == civilians
+      winner = 'spy'
+    } else if (allImpostersEliminated) {
+      // Civilians win if all imposters are eliminated (and spy didn't win)
+      winner = 'civilians'
+    } else if (civiliansEqualImposters) {
+      // Imposters win if civilians == imposters
+      winner = 'imposters'
+    }
     
     return { 
-      civiliansWon, 
+      winner, 
       votedOutPlayer: null // Not needed for final results
     }
   }
@@ -387,6 +480,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         eliminatedPlayerId: null,
         autoCalculateImposters: true,
         manualImposterCount: 1,
+        hasSpy: prev.hasSpy, // Keep spy setting
+        spyWord: null,
+        imposterHint: null,
       }
     })
   }
@@ -399,6 +495,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         setRoundDuration,
         setAutoCalculateImposters,
         setManualImposterCount,
+        setHasSpy,
         setPlayers,
         setPhase,
         assignRoles,

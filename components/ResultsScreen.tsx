@@ -6,23 +6,26 @@ import { IMPOSTER_WORD } from '@/data/vietnameseWords'
 export default function ResultsScreen() {
   const { gameState, resetGame, playAgain, calculateResults } = useGame()
 
-  const { civiliansWon, votedOutPlayer } = calculateResults()
+  const { winner, votedOutPlayer } = calculateResults()
   const imposters = gameState.players.filter((p) => p.role === 'imposter')
   const civilians = gameState.players.filter((p) => p.role === 'civilian')
+  const spies = gameState.players.filter((p) => p.role === 'spy')
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl p-8 md:p-12 max-w-3xl w-full border border-white/20">
         <div className="text-center mb-8">
           <div className="text-6xl mb-4">
-            {civiliansWon ? '🎉' : '😈'}
+            {winner === 'civilians' ? '🎉' : winner === 'spy' ? '🕵️‍♂️' : '😈'}
           </div>
           <h1 className="text-4xl font-bold text-white mb-2">
-            {civiliansWon ? 'Civilians Win!' : 'Imposters Win!'}
+            {winner === 'civilians' ? 'Civilians Win!' : winner === 'spy' ? 'Spy Wins!' : 'Imposters Win!'}
           </h1>
           <p className="text-white/70">
-            {civiliansWon
+            {winner === 'civilians'
               ? 'All imposters have been eliminated!'
+              : winner === 'spy'
+              ? 'All imposters eliminated and spy equals civilians!'
               : `The imposter${imposters.length > 1 ? 's' : ''} survived!`}
           </p>
         </div>
@@ -79,11 +82,26 @@ export default function ResultsScreen() {
 
         <div className="bg-white/5 rounded-lg p-4 mb-6 border border-white/10">
           <p className="text-white/80 text-center">
-            <span className="font-semibold">Civilian word:</span>{' '}
-            <span className="text-blue-300 font-bold">{gameState.civilianWord}</span>
-            {' | '}
-            <span className="font-semibold">Imposter word:</span>{' '}
-            <span className="text-red-300 font-bold">{IMPOSTER_WORD}</span>
+            {gameState.hasSpy ? (
+              <>
+                <span className="font-semibold">Civilian word:</span>{' '}
+                <span className="text-blue-300 font-bold">{gameState.civilianWord}</span>
+                {' | '}
+                <span className="font-semibold">Spy word:</span>{' '}
+                <span className="text-purple-300 font-bold">{gameState.spyWord}</span>
+                {' | '}
+                <span className="font-semibold">Imposter hint:</span>{' '}
+                <span className="text-red-300 font-bold">{gameState.imposterHint}</span>
+              </>
+            ) : (
+              <>
+                <span className="font-semibold">Civilian word:</span>{' '}
+                <span className="text-blue-300 font-bold">{gameState.civilianWord}</span>
+                {' | '}
+                <span className="font-semibold">Imposter word:</span>{' '}
+                <span className="text-red-300 font-bold">{IMPOSTER_WORD}</span>
+              </>
+            )}
           </p>
         </div>
 

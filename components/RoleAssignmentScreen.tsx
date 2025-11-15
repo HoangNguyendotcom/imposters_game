@@ -94,21 +94,30 @@ export default function RoleAssignmentScreen() {
                 className={`rounded-lg p-8 text-center border-2 ${
                   currentPlayer.role === 'imposter'
                     ? 'bg-red-500/20 border-red-500/50'
+                    : gameState.hasSpy
+                    ? 'bg-blue-500/20 border-blue-500/50'
+                    : currentPlayer.role === 'spy'
+                    ? 'bg-purple-500/20 border-purple-500/50'
                     : 'bg-blue-500/20 border-blue-500/50'
                 }`}
               >
                 <div className="text-5xl mb-4">
-                  {currentPlayer.role === 'imposter' ? '🕵️' : '👤'}
+                  {currentPlayer.role === 'imposter' ? '🕵️' : gameState.hasSpy ? '👤' : (currentPlayer.role === 'spy' ? '🕵️‍♂️' : '👤')}
                 </div>
                 <div className="text-4xl font-bold text-white mb-4">
                   {currentPlayer.word}
                 </div>
                 <div className="text-xl text-white/90 mb-2">
-                  {currentPlayer.role === 'imposter' ? 'IMPOSTER' : 'CIVILIAN'}
+                  {gameState.hasSpy
+                    ? (currentPlayer.role === 'imposter' ? 'IMPOSTER' : 'NOT IMPOSTER')
+                    : (currentPlayer.role === 'imposter' ? 'IMPOSTER' : currentPlayer.role === 'spy' ? 'SPY' : 'CIVILIAN')
+                  }
                 </div>
                 <p className="text-white/70 text-sm">
                   {currentPlayer.role === 'imposter'
                     ? 'Your word is different! Blend in and avoid detection.'
+                    : currentPlayer.role === 'spy'
+                    ? 'You have a different word! Find the imposters.'
                     : 'Find the imposter(s)!'}
                 </p>
               </div>

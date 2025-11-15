@@ -27,16 +27,23 @@ export default function RevealEliminatedScreen() {
         <div className={`rounded-lg p-8 text-center border-2 mb-6 ${
           eliminatedPlayer.role === 'imposter'
             ? 'bg-red-500/20 border-red-500/50'
+            : gameState.hasSpy
+            ? 'bg-blue-500/20 border-blue-500/50'
+            : eliminatedPlayer.role === 'spy'
+            ? 'bg-purple-500/20 border-purple-500/50'
             : 'bg-blue-500/20 border-blue-500/50'
         }`}>
           <div className="text-6xl mb-4">
-            {eliminatedPlayer.role === 'imposter' ? '🕵️' : '👤'}
+            {eliminatedPlayer.role === 'imposter' ? '🕵️' : gameState.hasSpy ? '👤' : (eliminatedPlayer.role === 'spy' ? '🕵️‍♂️' : '👤')}
           </div>
           <h2 className="text-3xl font-bold text-white mb-2">
             {eliminatedPlayer.name}
           </h2>
           <p className="text-2xl text-white/90 mb-4">
-            {eliminatedPlayer.role === 'imposter' ? 'IMPOSTER' : 'CIVILIAN'}
+            {gameState.hasSpy
+              ? (eliminatedPlayer.role === 'imposter' ? 'IMPOSTER' : 'NOT IMPOSTER')
+              : (eliminatedPlayer.role === 'imposter' ? 'IMPOSTER' : eliminatedPlayer.role === 'spy' ? 'SPY' : 'CIVILIAN')
+            }
           </p>
           <p className="text-white/70">
             Received {eliminatedPlayer.votes} {eliminatedPlayer.votes === 1 ? 'vote' : 'votes'}

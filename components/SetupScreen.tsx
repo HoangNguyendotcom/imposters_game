@@ -11,6 +11,7 @@ export default function SetupScreen() {
     setPhase, 
     setAutoCalculateImposters,
     setManualImposterCount,
+    setHasSpy,
     getImposterCount 
   } = useGame()
   const [count, setCount] = useState(gameState.playerCount || 4)
@@ -23,6 +24,9 @@ export default function SetupScreen() {
   const [timerEnabled, setTimerEnabled] = useState(true) // Default to enabled
   const [timerMinutes, setTimerMinutes] = useState(
     gameState.roundDuration > 0 ? Math.floor(gameState.roundDuration / 60) : 1
+  )
+  const [hasSpy, setHasSpyLocal] = useState(
+    gameState.hasSpy !== undefined ? gameState.hasSpy : false
   )
 
   // Auto-calculate: always 1 imposter
@@ -63,6 +67,7 @@ export default function SetupScreen() {
       } else {
         setRoundDuration(0)
       }
+      setHasSpy(hasSpy)
       setPhase('names')
     }
   }
@@ -204,6 +209,23 @@ export default function SetupScreen() {
                   )}
                 </div>
               </div>
+            )}
+          </div>
+
+          <div>
+            <label className="flex items-center gap-3 cursor-pointer mb-3">
+              <input
+                type="checkbox"
+                checked={hasSpy}
+                onChange={(e) => setHasSpyLocal(e.target.checked)}
+                className="w-5 h-5 rounded"
+              />
+              <span className="text-white font-medium">Enable Spy Role</span>
+            </label>
+            {hasSpy && (
+              <p className="text-white/70 text-sm text-center font-medium bg-white/5 rounded-lg p-3">
+                Spy will receive word2, Imposters will receive hint
+              </p>
             )}
           </div>
 
