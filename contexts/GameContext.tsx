@@ -30,7 +30,7 @@ export interface GameState {
   eliminatedPlayerId: string | null // ID of the eliminated player
   autoCalculateImposters: boolean // true = auto-calculate, false = manual
   manualImposterCount: number // manual imposter count (only used if autoCalculateImposters is false)
-  hasSpy: boolean // true = enable spy role
+  spyCount: number // number of spies (0 = no spies)
   spyWord: string | null // word assigned to spy (word1 or word2 from pair)
   imposterHint: string | null // hint assigned to imposters when spy is enabled
 }
@@ -41,7 +41,7 @@ interface GameContextType {
   setRoundDuration: (duration: number) => void
   setAutoCalculateImposters: (auto: boolean) => void
   setManualImposterCount: (count: number) => void
-  setHasSpy: (hasSpy: boolean) => void
+  setSpyCount: (count: number) => void
   setPlayers: (players: Omit<Player, 'role' | 'word' | 'votes'>[]) => void
   setPhase: (phase: GamePhase) => void
   assignRoles: (players?: Omit<Player, 'role' | 'word' | 'votes'>[]) => void
@@ -80,7 +80,7 @@ const defaultGameState: GameState = {
   eliminatedPlayerId: null,
   autoCalculateImposters: true,
   manualImposterCount: 1,
-  hasSpy: false,
+  spyCount: 0,
   spyWord: null,
   imposterHint: null,
 }
@@ -117,8 +117,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     setGameState((prev) => ({ ...prev, manualImposterCount: count }))
   }
 
-  const setHasSpy = (hasSpy: boolean) => {
-    setGameState((prev) => ({ ...prev, hasSpy }))
+  const setSpyCount = (count: number) => {
+    setGameState((prev) => ({ ...prev, spyCount: count }))
   }
 
   const getImposterCount = () => {
@@ -169,15 +169,15 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     let spyWord: string | null = null
     let imposterHint: string | null = null
     
-    if (gameState.hasSpy) {
+    if (gameState.spyCount > 0) {
       // Spy mode: use word pairs
       const wordPair = getRandomWordPair()
       civilianWord = wordPair.word1 // Civilians get word1
-      spyWord = wordPair.word2 // Spy gets word2
+      spyWord = wordPair.word2 // Spies get word2
       imposterHint = wordPair.hint // Imposters get hint
       
-      // Step 2: Assign roles (imposters, spy, civilians)
-      // First N are imposters, next 1 is spy (if hasSpy), rest are civilians
+      // Step 2: Assign roles (imposters, spies, civilians)
+      // First N are imposters, next spyCount are spies, rest are civilians
       const playersWithRoles = shuffled.map((player, index) => {
         if (index < imposterCount) {
           return {
@@ -187,8 +187,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
             votes: 0,
             votedFor: undefined,
           }
-        } else if (index === imposterCount) {
-          // One spy
+        } else if (index < imposterCount + gameState.spyCount) {
+          // Spies
           return {
             ...player,
             role: 'spy' as PlayerRole,
@@ -352,11 +352,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       const civiliansEqualImposters = civilians.length === imposters.length && imposters.length > 0
       
       // Spy win condition: all imposters eliminated AND spies == civilians
-      const spyWins = prev.hasSpy && allImpostersEliminated && spies.length > 0 && spies.length === civilians.length
+      const spyWins = prev.spyCount > 0 && allImpostersEliminated && spies.length > 0 && spies.length === civilians.length
       
       // Civilians win: all imposters eliminated AND all spies eliminated (only if spy mode is enabled)
       // If spy mode is not enabled, civilians win when all imposters are eliminated
-      const civiliansWin = prev.hasSpy 
+      const civiliansWin = prev.spyCount > 0 
         ? (allImpostersEliminated && spies.length === 0)
         : allImpostersEliminated
       
@@ -403,11 +403,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     const civiliansEqualImposters = civilians.length === imposters.length && imposters.length > 0
     
     // Spy win condition: all imposters eliminated AND spies == civilians
-    const spyWins = gameState.hasSpy && allImpostersEliminated && spies.length > 0 && spies.length === civilians.length
+    const spyWins = gameState.spyCount > 0 && allImpostersEliminated && spies.length > 0 && spies.length === civilians.length
     
     // Civilians win: all imposters eliminated AND all spies eliminated (only if spy mode is enabled)
     // If spy mode is not enabled, civilians win when all imposters are eliminated
-    const civiliansWin = gameState.hasSpy 
+    const civiliansWin = gameState.spyCount > 0 
       ? (allImpostersEliminated && spies.length === 0)
       : allImpostersEliminated
     
@@ -425,13 +425,13 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     // Determine winner
     let winner: 'civilians' | 'imposters' | 'spy' = 'imposters'
     
-    if (gameState.hasSpy && allImpostersEliminated && spies.length > 0 && spies.length === civilians.length) {
+    if (gameState.spyCount > 0 && allImpostersEliminated && spies.length > 0 && spies.length === civilians.length) {
       // Spy wins: all imposters eliminated AND spies == civilians
       winner = 'spy'
-    } else if (gameState.hasSpy && allImpostersEliminated && spies.length === 0) {
+    } else if (gameState.spyCount > 0 && allImpostersEliminated && spies.length === 0) {
       // Civilians win: all imposters eliminated AND all spies eliminated (when spy mode is enabled)
       winner = 'civilians'
-    } else if (!gameState.hasSpy && allImpostersEliminated) {
+    } else if (gameState.spyCount === 0 && allImpostersEliminated) {
       // Civilians win: all imposters eliminated (when spy mode is not enabled)
       winner = 'civilians'
     } else if (civiliansEqualImposters) {
@@ -495,7 +495,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         eliminatedPlayerId: null,
         autoCalculateImposters: true,
         manualImposterCount: 1,
-        hasSpy: prev.hasSpy, // Keep spy setting
+        spyCount: prev.spyCount, // Keep spy setting
         spyWord: null,
         imposterHint: null,
       }
@@ -510,7 +510,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         setRoundDuration,
         setAutoCalculateImposters,
         setManualImposterCount,
-        setHasSpy,
+        setSpyCount,
         setPlayers,
         setPhase,
         assignRoles,

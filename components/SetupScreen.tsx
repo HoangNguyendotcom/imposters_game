@@ -11,7 +11,7 @@ export default function SetupScreen() {
     setPhase, 
     setAutoCalculateImposters,
     setManualImposterCount,
-    setHasSpy,
+    setSpyCount,
     getImposterCount 
   } = useGame()
   const [count, setCount] = useState(gameState.playerCount || 4)
@@ -25,8 +25,8 @@ export default function SetupScreen() {
   const [timerMinutes, setTimerMinutes] = useState(
     gameState.roundDuration > 0 ? Math.floor(gameState.roundDuration / 60) : 1
   )
-  const [hasSpy, setHasSpyLocal] = useState(
-    gameState.hasSpy !== undefined ? gameState.hasSpy : false
+  const [spyCount, setSpyCountLocal] = useState(
+    gameState.spyCount !== undefined ? gameState.spyCount : 0
   )
 
   // Auto-calculate: always 1 imposter
@@ -43,6 +43,10 @@ export default function SetupScreen() {
   }
   
   const maxManualImposters = getMaxImposters(count)
+  
+  // Calculate max spies: playerCount - imposterCount - 1 (need at least 1 civilian)
+  const currentImposterCount = autoCalculate ? 1 : manualImposters
+  const maxSpies = Math.max(0, count - currentImposterCount - 1)
 
   // Ensure manualImposters is valid when player count changes or when switching to manual mode
   useEffect(() => {
@@ -50,6 +54,14 @@ export default function SetupScreen() {
       setManualImposters(maxManualImposters)
     }
   }, [count, autoCalculate, maxManualImposters, manualImposters])
+  
+  // Ensure spyCount is valid when player count or imposter count changes
+  useEffect(() => {
+    const newMaxSpies = Math.max(0, count - currentImposterCount - 1)
+    if (spyCount > newMaxSpies) {
+      setSpyCountLocal(newMaxSpies)
+    }
+  }, [count, currentImposterCount, spyCount])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -67,7 +79,7 @@ export default function SetupScreen() {
       } else {
         setRoundDuration(0)
       }
-      setHasSpy(hasSpy)
+      setSpyCount(spyCount)
       setPhase('names')
     }
   }
@@ -213,18 +225,57 @@ export default function SetupScreen() {
           </div>
 
           <div>
-            <label className="flex items-center gap-3 cursor-pointer mb-3">
-              <input
-                type="checkbox"
-                checked={hasSpy}
-                onChange={(e) => setHasSpyLocal(e.target.checked)}
-                className="w-5 h-5 rounded"
-              />
-              <span className="text-white font-medium">Enable Spy Role</span>
+            <label
+              htmlFor="spyCount"
+              className="block text-white text-lg mb-3 font-medium"
+            >
+              Number of Spies
             </label>
-            {hasSpy && (
-              <p className="text-white/70 text-sm text-center font-medium bg-white/5 rounded-lg p-3">
-                Spy will receive word2, Imposters will receive hint
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  const newCount = Math.max(0, spyCount - 1)
+                  setSpyCountLocal(newCount)
+                }}
+                disabled={spyCount <= 0}
+                className="w-12 h-12 rounded-lg bg-white/20 border border-white/30 text-white text-2xl font-bold hover:bg-white/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              >
+                −
+              </button>
+              <input
+                type="number"
+                id="spyCount"
+                min="0"
+                max={maxSpies}
+                value={spyCount}
+                onChange={(e) => {
+                  const newCount = parseInt(e.target.value) || 0
+                  const clampedCount = Math.min(maxSpies, Math.max(0, newCount))
+                  setSpyCountLocal(clampedCount)
+                }}
+                className="flex-1 px-4 py-3 rounded-lg bg-white/20 border border-white/30 text-white text-2xl font-bold text-center focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  const newCount = Math.min(maxSpies, spyCount + 1)
+                  setSpyCountLocal(newCount)
+                }}
+                disabled={spyCount >= maxSpies}
+                className="w-12 h-12 rounded-lg bg-white/20 border border-white/30 text-white text-2xl font-bold hover:bg-white/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              >
+                +
+              </button>
+            </div>
+            {spyCount > 0 && (
+              <p className="text-white/70 text-sm text-center font-medium bg-white/5 rounded-lg p-3 mt-2">
+                Spies will receive word2, Imposters will receive hint
+              </p>
+            )}
+            {maxSpies === 0 && (
+              <p className="text-white/60 text-sm text-center mt-2">
+                Not enough players for spies (need at least 1 civilian)
               </p>
             )}
           </div>

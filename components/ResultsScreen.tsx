@@ -82,7 +82,7 @@ export default function ResultsScreen() {
 
         <div className="bg-white/5 rounded-lg p-4 mb-6 border border-white/10">
           <p className="text-white/80 text-center">
-            {gameState.hasSpy ? (
+            {gameState.spyCount > 0 ? (
               <>
                 <span className="font-semibold">Civilian word:</span>{' '}
                 <span className="text-blue-300 font-bold">{gameState.civilianWord}</span>
