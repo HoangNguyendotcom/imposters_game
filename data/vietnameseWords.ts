@@ -369,10 +369,10 @@ export const vietnameseWordPairs: WordPair[] = [
   // Nghề nghiệp (Professions)
   { word1: 'Bác sĩ', word2: 'Y tá', hint: 'Nghề nghiệp' },
   { word1: 'Giáo viên', word2: 'Học sinh', hint: 'Nghề nghiệp' },
-  { word1: 'Kỹ sư', word2: 'Lập trình viên', hint: 'Nghề nghiệp' },
+  { word1: 'Kỹ sư', word2: 'Công nhân', hint: 'Nghề nghiệp' },
   { word1: 'Đầu bếp', word2: 'Phục vụ', hint: 'Nghề nghiệp' },
   { word1: 'Phi công', word2: 'Lái xe', hint: 'Nghề nghiệp' },
-  { word1: 'Cảnh sát', word2: 'Lính cứu hỏa', hint: 'Nghề nghiệp' },
+  { word1: 'Cảnh sát', word2: 'Bộ đội', hint: 'Nghề nghiệp' },
   { word1: 'Thợ xây', word2: 'Thợ điện', hint: 'Nghề nghiệp' },
   { word1: 'Ca sĩ', word2: 'Diễn viên', hint: 'Nghề nghiệp' },
   { word1: 'Nông dân', word2: 'Ngư dân', hint: 'Nghề nghiệp' },
