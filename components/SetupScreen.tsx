@@ -25,23 +25,19 @@ export default function SetupScreen() {
   )
 
   // Imposter options based on player count:
-  // 4-5 players: 1 imposter
-  // 6-8 players: 1 or 2 imposters
-  // 9-10 players: 1, 2, or 3 imposters
+  // If players < 7: max 1 imposter
+  // If players >= 7: max 2 imposters
   const getMaxImposters = (playerCount: number): number => {
-    if (playerCount >= 9) return 3
-    if (playerCount >= 6) return 2
+    if (playerCount >= 7) return 2
     return 1
   }
   
   const maxImposters = getMaxImposters(count)
   
-  // Calculate max spies based on constraints:
-  // 1. Max spies per player = floor(playerCount / 4) (same as imposters)
-  // 2. Max total (imposters + spies) = floor(playerCount / 2)
-  const maxSpiesPerPlayer = Math.floor(count / 4) // Same rule as imposters
+  // Calculate max spies: maxTotal - imposters
+  // Max total (imposters + spies) = floor(playerCount / 2)
   const maxTotal = Math.floor(count / 2) // Max total imposters + spies
-  const maxSpies = Math.max(0, Math.min(maxSpiesPerPlayer, maxTotal - imposters))
+  const maxSpies = Math.max(0, maxTotal - imposters)
 
   // Ensure imposters is valid when player count changes
   useEffect(() => {
@@ -52,9 +48,8 @@ export default function SetupScreen() {
   
   // Ensure spyCount is valid when player count or imposter count changes
   useEffect(() => {
-    const maxSpiesPerPlayer = Math.floor(count / 4)
     const maxTotal = Math.floor(count / 2)
-    const newMaxSpies = Math.max(0, Math.min(maxSpiesPerPlayer, maxTotal - imposters))
+    const newMaxSpies = Math.max(0, maxTotal - imposters)
     if (spyCount > newMaxSpies) {
       setSpyCountLocal(newMaxSpies)
     }
@@ -248,11 +243,7 @@ export default function SetupScreen() {
                 +
               </button>
             </div>
-            {spyCount > 0 && (
-              <p className="text-white/70 text-sm text-center font-medium bg-white/5 rounded-lg p-3 mt-2">
-                Spies will receive word2, Imposters will receive hint
-              </p>
-            )}
+            {spyCount > 0}
             {maxSpies === 0 && (
               <p className="text-white/60 text-sm text-center mt-2">
                 Max spies reached (imposters + spies ≤ {Math.floor(count / 2)})
