@@ -203,28 +203,25 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         currentRevealIndex: 0,
       }))
     } else {
-      // Normal mode: no spy
+      // No spy mode: use word pairs, imposters get hint
+      const wordPair = getRandomWordPair()
+      civilianWord = wordPair.word1 // Civilians get word1
+      imposterHint = wordPair.hint // Imposters get hint
+      
       // Step 2: Assign first N players as imposters, rest as civilians
       const playersWithRoles = shuffled.map((player, index) => {
         const isImposter = index < imposterCount
         return {
           ...player,
           role: (isImposter ? 'imposter' : 'civilian') as PlayerRole,
-          word: isImposter ? IMPOSTER_WORD : '', // Will be set to civilian word below
+          word: isImposter ? (imposterHint || IMPOSTER_WORD) : (civilianWord || ''), // Imposters get hint, civilians get word1
           votes: 0,
           votedFor: undefined,
         }
       })
       
       // Step 3: Shuffle again to randomize order
-      const finalShuffled = playersWithRoles.sort(() => Math.random() - 0.5)
-      
-      // Step 4: Get random civilian word and assign to all civilians
-      civilianWord = getRandomCivilianWord()
-      const finalPlayers = finalShuffled.map((player) => ({
-        ...player,
-        word: player.role === 'civilian' ? (civilianWord || '') : IMPOSTER_WORD,
-      }))
+      const finalPlayers = playersWithRoles.sort(() => Math.random() - 0.5)
 
       setGameState((prev) => ({
         ...prev,
@@ -232,7 +229,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         originalPlayers,
         civilianWord,
         spyWord: null,
-        imposterHint: null,
+        imposterHint,
         phase: 'reveal-roles',
         currentRevealIndex: 0,
       }))

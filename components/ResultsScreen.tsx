@@ -1,7 +1,6 @@
 'use client'
 
 import { useGame } from '@/contexts/GameContext'
-import { IMPOSTER_WORD } from '@/data/vietnameseWords'
 
 export default function ResultsScreen() {
   const { gameState, resetGame, playAgain, calculateResults } = useGame()
@@ -98,8 +97,8 @@ export default function ResultsScreen() {
                 <span className="font-semibold">Civilian word:</span>{' '}
                 <span className="text-blue-300 font-bold">{gameState.civilianWord}</span>
                 {' | '}
-                <span className="font-semibold">Imposter word:</span>{' '}
-                <span className="text-red-300 font-bold">{IMPOSTER_WORD}</span>
+                <span className="font-semibold">Imposter hint:</span>{' '}
+                <span className="text-red-300 font-bold">{gameState.imposterHint}</span>
               </>
             )}
           </p>
