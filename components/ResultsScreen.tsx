@@ -90,7 +90,7 @@ export default function ResultsScreen() {
                 <span className="text-purple-300 font-bold">{gameState.spyWord}</span>
                 {' | '}
                 <span className="font-semibold">Imposter hint:</span>{' '}
-                <span className="text-red-300 font-bold">{gameState.imposterHint}</span>
+                <span className="text-red-300 font-bold">Gợi ý: {gameState.imposterHint}</span>
               </>
             ) : (
               <>
@@ -98,7 +98,7 @@ export default function ResultsScreen() {
                 <span className="text-blue-300 font-bold">{gameState.civilianWord}</span>
                 {' | '}
                 <span className="font-semibold">Imposter hint:</span>{' '}
-                <span className="text-red-300 font-bold">{gameState.imposterHint}</span>
+                <span className="text-red-300 font-bold">Gợi ý: {gameState.imposterHint}</span>
               </>
             )}
           </p>

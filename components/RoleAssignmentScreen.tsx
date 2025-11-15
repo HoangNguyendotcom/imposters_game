@@ -105,7 +105,7 @@ export default function RoleAssignmentScreen() {
                   {currentPlayer.role === 'imposter' ? '🕵️' : gameState.spyCount > 0 ? '👤' : (currentPlayer.role === 'spy' ? '🕵️‍♂️' : '👤')}
                 </div>
                 <div className="text-4xl font-bold text-white mb-4">
-                  {currentPlayer.word}
+                  {currentPlayer.role === 'imposter' ? `Gợi ý: ${currentPlayer.word}` : currentPlayer.word}
                 </div>
                 <div className="text-xl text-white/90 mb-2">
                   {gameState.spyCount > 0
@@ -115,7 +115,7 @@ export default function RoleAssignmentScreen() {
                 </div>
                 <p className="text-white/70 text-sm">
                   {currentPlayer.role === 'imposter'
-                    ? 'Your word is different! Blend in and avoid detection.'
+                    ? 'Find the word with hint. Good luck!'
                     : currentPlayer.role === 'spy'
                     ? 'You have a different word! Find the imposters.'
                     : 'Find the imposter(s)!'}
