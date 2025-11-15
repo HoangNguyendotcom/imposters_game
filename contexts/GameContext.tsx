@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import { getRandomCivilianWord, getRandomWordPair, IMPOSTER_WORD } from '@/data/vietnameseWords'
 
-export type GamePhase = 'setup' | 'names' | 'reveal-roles' | 'playing' | 'voting' | 'reveal-eliminated' | 'results'
+export type GamePhase = 'setup' | 'names' | 'reveal-roles' | 'playing' | 'voting' | 'reveal-eliminated' | 'imposter-guess' | 'results'
 
 export type PlayerRole = 'civilian' | 'imposter' | 'spy'
 
@@ -32,6 +32,7 @@ export interface GameState {
   spyCount: number // number of spies (0 = no spies)
   spyWord: string | null // word assigned to spy (word1 or word2 from pair)
   imposterHint: string | null // hint assigned to imposters when spy is enabled
+  imposterGuessedCorrectly: boolean // true if imposters won by guessing the word
 }
 
 interface GameContextType {
@@ -54,9 +55,11 @@ interface GameContextType {
   calculateResults: () => { winner: 'civilians' | 'imposters' | 'spy'; votedOutPlayer: Player | null }
   resetGame: () => void
   playAgain: () => void
+  resetToRevealRoles: () => void
   updateTimer: (seconds: number) => void
   updatePlayerTurnTimer: (seconds: number) => void
   continueAfterTie: () => void
+  handleImposterGuess: (guess: string) => void
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined)
@@ -79,6 +82,7 @@ const defaultGameState: GameState = {
   spyCount: 0,
   spyWord: null,
   imposterHint: null,
+  imposterGuessedCorrectly: false,
 }
 
 export function GameProvider({ children }: { children: React.ReactNode }) {
@@ -201,6 +205,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         imposterHint,
         phase: 'reveal-roles',
         currentRevealIndex: 0,
+        imposterGuessedCorrectly: false,
       }))
     } else {
       // No spy mode: use word pairs, imposters get hint
@@ -232,6 +237,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         imposterHint,
         phase: 'reveal-roles',
         currentRevealIndex: 0,
+        imposterGuessedCorrectly: false,
       }))
     }
   }
@@ -308,11 +314,14 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   const eliminatePlayer = (playerId: string) => {
     setGameState((prev) => {
-      // Store eliminated player ID and transition to reveal phase
+      const eliminatedPlayer = prev.players.find(p => p.id === playerId)
+      // If eliminated player is an imposter, go to guess phase
+      // Otherwise, go to reveal-eliminated phase
+      const nextPhase = eliminatedPlayer?.role === 'imposter' ? 'imposter-guess' : 'reveal-eliminated'
       return {
         ...prev,
         eliminatedPlayerId: playerId,
-        phase: 'reveal-eliminated',
+        phase: nextPhase,
       }
     })
   }
@@ -404,6 +413,10 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     // Determine winner
     let winner: 'civilians' | 'imposters' | 'spy' = 'imposters'
     
+    // If we're in results phase and there are still imposters alive,
+    // it means they won (either by guessing correctly or by civilians == imposters)
+    // We check civiliansEqualImposters first, but if that's false and imposters still exist,
+    // it means they won by guessing correctly
     if (gameState.spyCount > 0 && allImpostersEliminated && spies.length > 0 && spies.length === civilians.length) {
       // Spy wins: all imposters eliminated AND spies == civilians
       winner = 'spy'
@@ -415,6 +428,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       winner = 'civilians'
     } else if (civiliansEqualImposters) {
       // Imposters win if civilians == imposters
+      winner = 'imposters'
+    } else if (imposters.length > 0) {
+      // If imposters still exist and we're in results phase, they won by guessing correctly
       winner = 'imposters'
     }
     
@@ -448,34 +464,83 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     }))
   }
 
+  const resetToRevealRoles = () => {
+    // Restore original players and reassign roles, then go to reveal-roles phase
+    const playersToRestore = gameState.originalPlayers.length > 0 
+      ? gameState.originalPlayers 
+      : gameState.players.map((p) => ({ id: p.id, name: p.name }))
+    
+    // Reassign roles with the restored players (this will set phase to 'reveal-roles' and reset all state)
+    assignRoles(playersToRestore)
+  }
+
   const playAgain = () => {
-    // Restore original players and reset game state
+    // Use resetToRevealRoles to go directly to reveal-roles
+    resetToRevealRoles()
+  }
+
+  const handleImposterGuess = (guess: string) => {
     setGameState((prev) => {
-      // Use originalPlayers if available, otherwise fall back to current players
-      const playersToRestore = prev.originalPlayers.length > 0 
-        ? prev.originalPlayers 
-        : prev.players.map((p) => ({ id: p.id, name: p.name }))
+      if (!prev.eliminatedPlayerId) return prev
       
-      return {
-        ...prev,
-        phase: 'names',
-        players: playersToRestore.map((p) => ({
-          id: p.id,
-          name: p.name,
-          role: 'civilian' as PlayerRole,
-          word: '',
-          votes: 0,
-        })),
-        civilianWord: null,
-        currentRevealIndex: 0,
-        timer: 0,
-        currentPlayerIndex: 0,
-        playerTurnTimer: 0,
-        eliminatedPlayerId: null,
-        imposterCount: prev.imposterCount, // Keep imposter setting
-        spyCount: prev.spyCount, // Keep spy setting
-        spyWord: null,
-        imposterHint: null,
+      const eliminatedPlayer = prev.players.find(p => p.id === prev.eliminatedPlayerId)
+      if (!eliminatedPlayer || eliminatedPlayer.role !== 'imposter') return prev
+      
+      // Check if guess matches the civilian word (case-insensitive, trim whitespace)
+      const guessMatches = prev.civilianWord && 
+        guess.trim().toLowerCase() === prev.civilianWord.trim().toLowerCase()
+      
+      if (guessMatches) {
+        // Imposter guessed correctly - imposters win!
+        return {
+          ...prev,
+          phase: 'results',
+          eliminatedPlayerId: null,
+          imposterGuessedCorrectly: true,
+        }
+      } else {
+        // Imposter guessed wrong - continue with normal elimination
+        const updatedPlayers = prev.players.filter((p) => p.id !== prev.eliminatedPlayerId)
+        const imposters = updatedPlayers.filter((p) => p.role === 'imposter')
+        const civilians = updatedPlayers.filter((p) => p.role === 'civilian')
+        const spies = updatedPlayers.filter((p) => p.role === 'spy')
+        
+        // Check win conditions after elimination
+        const allImpostersEliminated = imposters.length === 0
+        const civiliansEqualImposters = civilians.length === imposters.length && imposters.length > 0
+        
+        // Spy win condition: all imposters eliminated AND spies == civilians
+        const spyWins = prev.spyCount > 0 && allImpostersEliminated && spies.length > 0 && spies.length === civilians.length
+        
+        // Civilians win: all imposters eliminated AND all spies eliminated (only if spy mode is enabled)
+        const civiliansWin = prev.spyCount > 0 
+          ? (allImpostersEliminated && spies.length === 0)
+          : allImpostersEliminated
+        
+        if (civiliansWin || civiliansEqualImposters || spyWins) {
+          // Game ends
+          return {
+            ...prev,
+            players: updatedPlayers,
+            phase: 'results',
+            eliminatedPlayerId: null,
+          }
+        }
+        
+        // Continue game - reset votes and go back to playing
+        return {
+          ...prev,
+          players: updatedPlayers.map((p) => ({
+            ...p,
+            votes: 0,
+            votedFor: undefined,
+          })),
+          phase: 'playing',
+          timer: prev.roundDuration,
+          currentPlayerIndex: 0,
+          playerTurnTimer: prev.roundDuration,
+          eliminatedPlayerId: null,
+        }
       }
     })
   }
@@ -502,9 +567,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         calculateResults,
         resetGame,
         playAgain,
+        resetToRevealRoles,
         updateTimer,
         updatePlayerTurnTimer,
         continueAfterTie,
+        handleImposterGuess,
       }}
     >
       {children}

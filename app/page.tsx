@@ -7,6 +7,7 @@ import RoleAssignmentScreen from '@/components/RoleAssignmentScreen'
 import ActiveGameRound from '@/components/ActiveGameRound'
 import VotingScreen from '@/components/VotingScreen'
 import RevealEliminatedScreen from '@/components/RevealEliminatedScreen'
+import ImposterGuessScreen from '@/components/ImposterGuessScreen'
 import ResultsScreen from '@/components/ResultsScreen'
 import AudioManager from '@/components/AudioManager'
 
@@ -26,6 +27,8 @@ function GameContent() {
       return <VotingScreen />
     case 'reveal-eliminated':
       return <RevealEliminatedScreen />
+    case 'imposter-guess':
+      return <ImposterGuessScreen />
     case 'results':
       return <ResultsScreen />
     default:

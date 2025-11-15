@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useGame } from '@/contexts/GameContext'
 
 export default function ActiveGameRound() {
-  const { gameState, nextPlayerTurn, updatePlayerTurnTimer } = useGame()
+  const { gameState, nextPlayerTurn, updatePlayerTurnTimer, resetToRevealRoles } = useGame()
   const [playerTimer, setPlayerTimer] = useState(gameState.playerTurnTimer)
 
   const currentPlayer = gameState.players[gameState.currentPlayerIndex]
@@ -49,6 +49,14 @@ export default function ActiveGameRound() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl p-8 md:p-12 max-w-md w-full border border-white/20">
+        <button
+          onClick={resetToRevealRoles}
+          className="mb-6 bg-white/10 hover:bg-white/20 text-white font-semibold py-2 px-3 rounded-lg transition-all duration-200 border border-white/20 flex items-center justify-center mx-auto"
+          title="Reset"
+        >
+          <span className="text-lg">🔄</span>
+        </button>
+
         <div className="mb-6">
           <div className="flex justify-between text-white/80 text-sm mb-2">
             <span>Player {gameState.currentPlayerIndex + 1} of {gameState.players.length}</span>

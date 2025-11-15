@@ -25,6 +25,8 @@ export default function ResultsScreen() {
               ? 'All imposters have been eliminated!'
               : winner === 'spy'
               ? 'All imposters eliminated and spy equals civilians!'
+              : gameState.imposterGuessedCorrectly
+              ? 'The imposter guessed the word correctly!'
               : `The imposter${imposters.length > 1 ? 's' : ''} survived!`}
           </p>
         </div>

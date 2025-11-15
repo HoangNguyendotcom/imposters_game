@@ -4,17 +4,28 @@ import { useState } from 'react'
 import { useGame } from '@/contexts/GameContext'
 
 export default function VotingScreen() {
-  const { gameState, vote, eliminatePlayer, continueAfterTie } = useGame()
+  const { gameState, vote, eliminatePlayer, continueAfterTie, resetToRevealRoles } = useGame()
   const [currentVoterIndex, setCurrentVoterIndex] = useState(0)
   const [votingComplete, setVotingComplete] = useState(false)
   const [showVoteResults, setShowVoteResults] = useState(false)
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false)
+  const [pendingVoteTargetId, setPendingVoteTargetId] = useState<string | null>(null)
 
   const currentVoter = gameState.players[currentVoterIndex]
   const hasVoted = currentVoter?.votedFor !== undefined
 
-  const handleVote = (targetId: string) => {
+  const handleVoteClick = (targetId: string) => {
     if (currentVoter && !hasVoted) {
-      vote(currentVoter.id, targetId)
+      setPendingVoteTargetId(targetId)
+      setShowConfirmDialog(true)
+    }
+  }
+
+  const handleConfirmVote = () => {
+    if (currentVoter && pendingVoteTargetId) {
+      vote(currentVoter.id, pendingVoteTargetId)
+      setShowConfirmDialog(false)
+      setPendingVoteTargetId(null)
       
       // Move to next voter
       if (currentVoterIndex < gameState.players.length - 1) {
@@ -25,6 +36,11 @@ export default function VotingScreen() {
         setShowVoteResults(true)
       }
     }
+  }
+
+  const handleCancelVote = () => {
+    setShowConfirmDialog(false)
+    setPendingVoteTargetId(null)
   }
 
   const handleShowEliminated = () => {
@@ -55,6 +71,13 @@ export default function VotingScreen() {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl p-8 md:p-12 max-w-2xl w-full border border-white/20">
+        <button
+          onClick={resetToRevealRoles}
+          className="mb-6 bg-white/10 hover:bg-white/20 text-white font-semibold py-2 px-3 rounded-lg transition-all duration-200 border border-white/20 flex items-center justify-center mx-auto"
+          title="Reset"
+        >
+          <span className="text-lg">🔄</span>
+        </button>
           <h1 className="text-4xl font-bold text-white text-center mb-8">
             Vote Results
           </h1>
@@ -109,6 +132,13 @@ export default function VotingScreen() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl p-8 md:p-12 max-w-2xl w-full border border-white/20">
+      <button
+          onClick={resetToRevealRoles}
+          className="mb-6 bg-white/10 hover:bg-white/20 text-white font-semibold py-2 px-3 rounded-lg transition-all duration-200 border border-white/20 flex items-center justify-center mx-auto"
+          title="Reset"
+        >
+          <span className="text-lg">🔄</span>
+        </button>
         <div className="mb-6">
           <div className="text-white/80 text-sm mb-2 text-center">
             Voter {currentVoterIndex + 1} of {gameState.players.length}
@@ -153,7 +183,7 @@ export default function VotingScreen() {
               .map((player) => (
                 <button
                   key={player.id}
-                  onClick={() => handleVote(player.id)}
+                  onClick={() => handleVoteClick(player.id)}
                   className="w-full bg-white/10 hover:bg-white/20 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-200 border border-white/20 text-left"
                 >
                   {player.name}
@@ -162,6 +192,43 @@ export default function VotingScreen() {
           </div>
         )}
       </div>
+
+      {/* Confirmation Dialog */}
+      {showConfirmDialog && pendingVoteTargetId && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl p-8 max-w-md w-full border border-white/20">
+            <div className="text-center mb-6">
+              <div className="text-5xl mb-4">❓</div>
+              <h2 className="text-3xl font-bold text-white mb-4">
+                Confirm Your Vote
+              </h2>
+              <p className="text-white/80 text-lg mb-2">
+                You are voting for:
+              </p>
+              <p className="text-2xl font-bold text-purple-300 mb-4">
+                {gameState.players.find(p => p.id === pendingVoteTargetId)?.name}
+              </p>
+              <p className="text-white/60 text-sm">
+                This action cannot be undone.
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={handleCancelVote}
+                className="flex-1 bg-white/10 hover:bg-white/20 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 border border-white/20"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmVote}
+                className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg"
+              >
+                Confirm Vote
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
