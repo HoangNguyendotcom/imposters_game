@@ -158,9 +158,10 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     if (gameState.spyCount > 0) {
       // Spy mode: use word pairs
       const wordPair = getRandomWordPair()
-      civilianWord = wordPair.word1 // Civilians get word1
-      spyWord = wordPair.word2 // Spies get word2
-      imposterHint = wordPair.hint // Imposters get hint
+      const randomAssignment = Math.random() < 0.5
+      civilianWord = randomAssignment ? wordPair.word1 : wordPair.word2
+      spyWord = randomAssignment ? wordPair.word2 : wordPair.word1
+      imposterHint = wordPair.hint
       
       // Step 2: Assign roles (imposters, spies, civilians)
       // First N are imposters, next spyCount are spies, rest are civilians
@@ -426,13 +427,15 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     } else if (gameState.spyCount === 0 && allImpostersEliminated) {
       // Civilians win: all imposters eliminated (when spy mode is not enabled)
       winner = 'civilians'
-    } else if (civiliansEqualImposters) {
-      // Imposters win if civilians == imposters
-      winner = 'imposters'
-    } else if (imposters.length > 0) {
-      // If imposters still exist and we're in results phase, they won by guessing correctly
-      winner = 'imposters'
-    }
+    } 
+    // else if (civiliansEqualImposters) {
+    //   // Imposters win if civilians == imposters
+    //   winner = 'imposters'
+    // } 
+    // else if (imposters.length > 0) {
+    //   // If imposters still exist and we're in results phase, they won by guessing correctly
+    //   winner = 'imposters'
+    // }
     
     return { 
       winner, 
