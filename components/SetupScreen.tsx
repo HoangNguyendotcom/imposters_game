@@ -58,7 +58,11 @@ export default function SetupScreen() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (count >= 4 && count <= 10) {
-      if (imposters < 1 || imposters > maxImposters) {
+      if (imposters < 0 || imposters > maxImposters) {
+        return
+      }
+      // Validate total constraint: imposters + spies > 0 (at least 1 total)
+      if (imposters + spyCount === 0) {
         return
       }
       // Validate total constraint: imposters + spies <= floor(playerCount / 2)
@@ -161,10 +165,10 @@ export default function SetupScreen() {
               <button
                 type="button"
                 onClick={() => {
-                  const newCount = Math.max(1, imposters - 1)
+                  const newCount = Math.max(0, imposters - 1)
                   setImposters(newCount)
                 }}
-                disabled={imposters <= 1}
+                disabled={imposters <= 0}
                 className="w-12 h-12 rounded-lg bg-white/20 border border-white/30 text-white text-2xl font-bold hover:bg-white/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
               >
                 −
@@ -172,12 +176,12 @@ export default function SetupScreen() {
               <input
                 type="number"
                 id="imposterCount"
-                min="1"
+                min="0"
                 max={maxImposters}
                 value={imposters}
                 onChange={(e) => {
-                  const newCount = parseInt(e.target.value) || 1
-                  const clampedCount = Math.min(maxImposters, Math.max(1, newCount))
+                  const newCount = parseInt(e.target.value) || 0
+                  const clampedCount = Math.min(maxImposters, Math.max(0, newCount))
                   setImposters(clampedCount)
                 }}
                 className="flex-1 px-4 py-3 rounded-lg bg-white/20 border border-white/30 text-white text-2xl font-bold text-center focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent"
@@ -195,8 +199,13 @@ export default function SetupScreen() {
               </button>
             </div>
             <p className="text-white/60 text-sm mt-2 text-center">
-              Max: {maxImposters} imposter{maxImposters !== 1 ? 's' : ''}
+              Min: 0 | Max: {maxImposters} imposter{maxImposters !== 1 ? 's' : ''}
             </p>
+            {imposters + spyCount === 0 && (
+              <p className="text-yellow-300 text-sm mt-2 text-center font-medium">
+                ⚠️ Total imposters + spies must be at least 1
+              </p>
+            )}
           </div>
 
           <div>
@@ -243,7 +252,6 @@ export default function SetupScreen() {
                 +
               </button>
             </div>
-            {spyCount > 0}
             {maxSpies === 0 && (
               <p className="text-white/60 text-sm text-center mt-2">
                 Max spies reached (imposters + spies ≤ {Math.floor(count / 2)})
@@ -303,7 +311,7 @@ export default function SetupScreen() {
 
           <button
             type="submit"
-            disabled={imposters < 1 || imposters > maxImposters}
+            disabled={imposters < 0 || imposters > maxImposters || imposters + spyCount === 0}
             className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-4 px-6 rounded-lg text-lg transition-all duration-200 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
           >
             Continue
