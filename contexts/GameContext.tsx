@@ -354,7 +354,13 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       // Spy win condition: all imposters eliminated AND spies == civilians
       const spyWins = prev.hasSpy && allImpostersEliminated && spies.length > 0 && spies.length === civilians.length
       
-      if (allImpostersEliminated || civiliansEqualImposters || spyWins) {
+      // Civilians win: all imposters eliminated AND all spies eliminated (only if spy mode is enabled)
+      // If spy mode is not enabled, civilians win when all imposters are eliminated
+      const civiliansWin = prev.hasSpy 
+        ? (allImpostersEliminated && spies.length === 0)
+        : allImpostersEliminated
+      
+      if (civiliansWin || civiliansEqualImposters || spyWins) {
         // Game ends
         return {
           ...prev,
@@ -399,7 +405,13 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     // Spy win condition: all imposters eliminated AND spies == civilians
     const spyWins = gameState.hasSpy && allImpostersEliminated && spies.length > 0 && spies.length === civilians.length
     
-    return allImpostersEliminated || civiliansEqualImposters || spyWins
+    // Civilians win: all imposters eliminated AND all spies eliminated (only if spy mode is enabled)
+    // If spy mode is not enabled, civilians win when all imposters are eliminated
+    const civiliansWin = gameState.hasSpy 
+      ? (allImpostersEliminated && spies.length === 0)
+      : allImpostersEliminated
+    
+    return civiliansWin || civiliansEqualImposters || spyWins
   }
 
   const calculateResults = () => {
@@ -416,8 +428,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     if (gameState.hasSpy && allImpostersEliminated && spies.length > 0 && spies.length === civilians.length) {
       // Spy wins: all imposters eliminated AND spies == civilians
       winner = 'spy'
-    } else if (allImpostersEliminated) {
-      // Civilians win if all imposters are eliminated (and spy didn't win)
+    } else if (gameState.hasSpy && allImpostersEliminated && spies.length === 0) {
+      // Civilians win: all imposters eliminated AND all spies eliminated (when spy mode is enabled)
+      winner = 'civilians'
+    } else if (!gameState.hasSpy && allImpostersEliminated) {
+      // Civilians win: all imposters eliminated (when spy mode is not enabled)
       winner = 'civilians'
     } else if (civiliansEqualImposters) {
       // Imposters win if civilians == imposters
