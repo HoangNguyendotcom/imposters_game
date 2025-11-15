@@ -106,7 +106,7 @@ export default function RoleAssignmentScreen() {
                 {currentPlayer.role === 'imposter'
                   ? 'Find the word with hint. Good luck!'
                   : currentPlayer.role === 'spy'
-                  ? 'You have a different word! Find the imposters.'
+                  ? 'Find the imposter(s)!'
                   : 'Find the imposter(s)!'}
               </p>
             </div>
