@@ -338,7 +338,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       
       // Check win conditions after elimination
       const allImpostersEliminated = imposters.length === 0
-      const civiliansEqualImposters = civilians.length === imposters.length && imposters.length > 0
+      const civilianAlive = civilians.length + spies.length
+      const civiliansEqualImposters = civilianAlive === imposters.length && imposters.length > 0
       
       // Spy win condition: all imposters eliminated AND spies == civilians
       const spyWins = prev.spyCount > 0 && allImpostersEliminated && spies.length > 0 && spies.length === civilians.length
@@ -427,6 +428,12 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     } else if (gameState.spyCount === 0 && allImpostersEliminated) {
       // Civilians win: all imposters eliminated (when spy mode is not enabled)
       winner = 'civilians'
+    } else if (civilians.length === 1 && imposters.length === 1) {
+      // Civilians win: all imposters eliminated (when spy mode is not enabled)
+      winner = 'imposters'
+    }    else {
+      // Civilians win: all imposters eliminated (when spy mode is not enabled)
+      winner = 'civilians'
     } 
     // else if (civiliansEqualImposters) {
     //   // Imposters win if civilians == imposters
@@ -510,7 +517,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         
         // Check win conditions after elimination
         const allImpostersEliminated = imposters.length === 0
-        const civiliansEqualImposters = civilians.length === imposters.length && imposters.length > 0
+        const civilianAlive = civilians.length + spies.length
+        const civiliansEqualImposters = civilianAlive === imposters.length && imposters.length > 0
         
         // Spy win condition: all imposters eliminated AND spies == civilians
         const spyWins = prev.spyCount > 0 && allImpostersEliminated && spies.length > 0 && spies.length === civilians.length
