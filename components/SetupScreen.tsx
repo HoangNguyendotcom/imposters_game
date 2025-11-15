@@ -314,7 +314,7 @@ export default function SetupScreen() {
             disabled={imposters < 0 || imposters > maxImposters || imposters + spyCount === 0}
             className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-4 px-6 rounded-lg text-lg transition-all duration-200 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
           >
-            Continue
+            Get Started!!!
           </button>
         </form>
       </div>
