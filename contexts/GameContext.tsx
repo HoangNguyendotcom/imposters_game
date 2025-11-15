@@ -28,8 +28,7 @@ export interface GameState {
   currentPlayerIndex: number // current player talking
   playerTurnTimer: number // timer for current player's turn
   eliminatedPlayerId: string | null // ID of the eliminated player
-  autoCalculateImposters: boolean // true = auto-calculate, false = manual
-  manualImposterCount: number // manual imposter count (only used if autoCalculateImposters is false)
+  imposterCount: number // number of imposters
   spyCount: number // number of spies (0 = no spies)
   spyWord: string | null // word assigned to spy (word1 or word2 from pair)
   imposterHint: string | null // hint assigned to imposters when spy is enabled
@@ -39,8 +38,7 @@ interface GameContextType {
   gameState: GameState
   setPlayerCount: (count: number) => void
   setRoundDuration: (duration: number) => void
-  setAutoCalculateImposters: (auto: boolean) => void
-  setManualImposterCount: (count: number) => void
+  setImposterCount: (count: number) => void
   setSpyCount: (count: number) => void
   setPlayers: (players: Omit<Player, 'role' | 'word' | 'votes'>[]) => void
   setPhase: (phase: GamePhase) => void
@@ -58,7 +56,6 @@ interface GameContextType {
   playAgain: () => void
   updateTimer: (seconds: number) => void
   updatePlayerTurnTimer: (seconds: number) => void
-  getImposterCount: () => number
   continueAfterTie: () => void
 }
 
@@ -78,8 +75,7 @@ const defaultGameState: GameState = {
   currentPlayerIndex: 0,
   playerTurnTimer: 0,
   eliminatedPlayerId: null,
-  autoCalculateImposters: true,
-  manualImposterCount: 1,
+  imposterCount: 1,
   spyCount: 0,
   spyWord: null,
   imposterHint: null,
@@ -109,24 +105,12 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     setGameState((prev) => ({ ...prev, playerCount: count }))
   }
 
-  const setAutoCalculateImposters = (auto: boolean) => {
-    setGameState((prev) => ({ ...prev, autoCalculateImposters: auto }))
-  }
-
-  const setManualImposterCount = (count: number) => {
-    setGameState((prev) => ({ ...prev, manualImposterCount: count }))
+  const setImposterCount = (count: number) => {
+    setGameState((prev) => ({ ...prev, imposterCount: count }))
   }
 
   const setSpyCount = (count: number) => {
     setGameState((prev) => ({ ...prev, spyCount: count }))
-  }
-
-  const getImposterCount = () => {
-    if (gameState.autoCalculateImposters) {
-      // Auto-calculate: always 1 imposter
-      return 1
-    }
-    return gameState.manualImposterCount
   }
 
   const setRoundDuration = (duration: number) => {
@@ -152,9 +136,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const assignRoles = (playersToAssign?: Omit<Player, 'role' | 'word' | 'votes'>[]) => {
     const players = playersToAssign || gameState.players
     const playerCount = players.length
-    const imposterCount = gameState.autoCalculateImposters
-      ? 1 // Auto-calculate: always 1 imposter
-      : gameState.manualImposterCount
+    const imposterCount = gameState.imposterCount
     
     // Store original players for playAgain
     const originalPlayers = players.map((p) => ({
@@ -493,8 +475,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         currentPlayerIndex: 0,
         playerTurnTimer: 0,
         eliminatedPlayerId: null,
-        autoCalculateImposters: true,
-        manualImposterCount: 1,
+        imposterCount: prev.imposterCount, // Keep imposter setting
         spyCount: prev.spyCount, // Keep spy setting
         spyWord: null,
         imposterHint: null,
@@ -508,8 +489,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         gameState,
         setPlayerCount,
         setRoundDuration,
-        setAutoCalculateImposters,
-        setManualImposterCount,
+        setImposterCount,
         setSpyCount,
         setPlayers,
         setPhase,
@@ -527,7 +507,6 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         playAgain,
         updateTimer,
         updatePlayerTurnTimer,
-        getImposterCount,
         continueAfterTie,
       }}
     >

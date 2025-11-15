@@ -9,17 +9,12 @@ export default function SetupScreen() {
     setPlayerCount, 
     setRoundDuration, 
     setPhase, 
-    setAutoCalculateImposters,
-    setManualImposterCount,
-    setSpyCount,
-    getImposterCount 
+    setImposterCount,
+    setSpyCount
   } = useGame()
   const [count, setCount] = useState(gameState.playerCount || 4)
-  const [autoCalculate, setAutoCalculate] = useState(
-    gameState.autoCalculateImposters !== undefined ? gameState.autoCalculateImposters : true
-  )
-  const [manualImposters, setManualImposters] = useState(
-    gameState.manualImposterCount || 1
+  const [imposters, setImposters] = useState(
+    gameState.imposterCount || 1
   )
   const [timerEnabled, setTimerEnabled] = useState(true) // Default to enabled
   const [timerMinutes, setTimerMinutes] = useState(
@@ -29,10 +24,7 @@ export default function SetupScreen() {
     gameState.spyCount !== undefined ? gameState.spyCount : 0
   )
 
-  // Auto-calculate: always 1 imposter
-  const autoImposterCount = 1
-  
-  // Manual imposter options based on player count:
+  // Imposter options based on player count:
   // 4-5 players: 1 imposter
   // 6-8 players: 1 or 2 imposters
   // 9-10 players: 1, 2, or 3 imposters
@@ -42,44 +34,54 @@ export default function SetupScreen() {
     return 1
   }
   
-  const maxManualImposters = getMaxImposters(count)
+  const maxImposters = getMaxImposters(count)
   
-  // Calculate max spies: playerCount - imposterCount - 1 (need at least 1 civilian)
-  const currentImposterCount = autoCalculate ? 1 : manualImposters
-  const maxSpies = Math.max(0, count - currentImposterCount - 1)
+  // Calculate max spies based on constraints:
+  // 1. Max spies per player = floor(playerCount / 4) (same as imposters)
+  // 2. Max total (imposters + spies) = floor(playerCount / 2)
+  const maxSpiesPerPlayer = Math.floor(count / 4) // Same rule as imposters
+  const maxTotal = Math.floor(count / 2) // Max total imposters + spies
+  const maxSpies = Math.max(0, Math.min(maxSpiesPerPlayer, maxTotal - imposters))
 
-  // Ensure manualImposters is valid when player count changes or when switching to manual mode
+  // Ensure imposters is valid when player count changes
   useEffect(() => {
-    if (!autoCalculate && manualImposters > maxManualImposters) {
-      setManualImposters(maxManualImposters)
+    if (imposters > maxImposters) {
+      setImposters(maxImposters)
     }
-  }, [count, autoCalculate, maxManualImposters, manualImposters])
+  }, [count, maxImposters, imposters])
   
   // Ensure spyCount is valid when player count or imposter count changes
   useEffect(() => {
-    const newMaxSpies = Math.max(0, count - currentImposterCount - 1)
+    const maxSpiesPerPlayer = Math.floor(count / 4)
+    const maxTotal = Math.floor(count / 2)
+    const newMaxSpies = Math.max(0, Math.min(maxSpiesPerPlayer, maxTotal - imposters))
     if (spyCount > newMaxSpies) {
       setSpyCountLocal(newMaxSpies)
     }
-  }, [count, currentImposterCount, spyCount])
+  }, [count, imposters, spyCount])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (count >= 4 && count <= 10) {
-      if (!autoCalculate && (manualImposters < 1 || manualImposters > maxManualImposters)) {
+      if (imposters < 1 || imposters > maxImposters) {
         return
       }
-      setPlayerCount(count)
-      setAutoCalculateImposters(autoCalculate)
-      if (!autoCalculate) {
-        setManualImposterCount(manualImposters)
+      // Validate total constraint: imposters + spies <= floor(playerCount / 2)
+      const maxTotal = Math.floor(count / 2)
+      let finalSpyCount = spyCount
+      if (imposters + spyCount > maxTotal) {
+        // Adjust spy count if needed
+        finalSpyCount = Math.max(0, maxTotal - imposters)
+        setSpyCountLocal(finalSpyCount)
       }
+      setPlayerCount(count)
+      setImposterCount(imposters)
       if (timerEnabled) {
         setRoundDuration(timerMinutes * 60)
       } else {
         setRoundDuration(0)
       }
-      setSpyCount(spyCount)
+      setSpyCount(finalSpyCount)
       setPhase('names')
     }
   }
@@ -105,11 +107,9 @@ export default function SetupScreen() {
                 onClick={() => {
                   const newCount = Math.max(4, count - 1)
                   setCount(newCount)
-                  if (!autoCalculate) {
-                    const newMax = getMaxImposters(newCount)
-                    if (manualImposters > newMax) {
-                      setManualImposters(newMax)
-                    }
+                  const newMax = getMaxImposters(newCount)
+                  if (imposters > newMax) {
+                    setImposters(newMax)
                   }
                 }}
                 disabled={count <= 4}
@@ -127,11 +127,9 @@ export default function SetupScreen() {
                   const newCount = parseInt(e.target.value) || 4
                   const clampedCount = Math.min(10, Math.max(4, newCount))
                   setCount(clampedCount)
-                  if (!autoCalculate) {
-                    const newMax = getMaxImposters(clampedCount)
-                    if (manualImposters > newMax) {
-                      setManualImposters(newMax)
-                    }
+                  const newMax = getMaxImposters(clampedCount)
+                  if (imposters > newMax) {
+                    setImposters(newMax)
                   }
                 }}
                 className="flex-1 px-4 py-3 rounded-lg bg-white/20 border border-white/30 text-white text-2xl font-bold text-center focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent"
@@ -141,11 +139,9 @@ export default function SetupScreen() {
                 onClick={() => {
                   const newCount = Math.min(10, count + 1)
                   setCount(newCount)
-                  if (!autoCalculate) {
-                    const newMax = getMaxImposters(newCount)
-                    if (manualImposters > newMax) {
-                      setManualImposters(newMax)
-                    }
+                  const newMax = getMaxImposters(newCount)
+                  if (imposters > newMax) {
+                    setImposters(newMax)
                   }
                 }}
                 disabled={count >= 10}
@@ -160,68 +156,52 @@ export default function SetupScreen() {
           </div>
 
           <div>
-            <label className="flex items-center gap-3 cursor-pointer mb-3">
-              <input
-                type="checkbox"
-                checked={autoCalculate}
-                onChange={(e) => setAutoCalculate(e.target.checked)}
-                className="w-5 h-5 rounded"
-              />
-              <span className="text-white font-medium">Auto-calculate Imposters</span>
+            <label
+              htmlFor="imposterCount"
+              className="block text-white text-lg mb-3 font-medium"
+            >
+              Number of Imposters
             </label>
-            {autoCalculate ? (
-              <p className="text-white/70 text-sm text-center font-medium bg-white/5 rounded-lg p-3">
-                Imposters: {autoImposterCount} 
-              </p>
-            ) : (
-              <div>
-                <label
-                  htmlFor="imposterCount"
-                  className="block text-white text-sm mb-2 font-medium"
-                >
-                  Number of Imposters
-                </label>
-                <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setManualImposters(1)}
-                    className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-all ${
-                      manualImposters === 1
-                        ? 'bg-gradient-to-r from-red-500 to-pink-500 text-white'
-                        : 'bg-white/10 text-white/70 hover:bg-white/20'
-                    }`}
-                  >
-                    1 Imposter
-                  </button>
-                  {maxManualImposters >= 2 && (
-                    <button
-                      type="button"
-                      onClick={() => setManualImposters(2)}
-                      className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-all ${
-                        manualImposters === 2
-                          ? 'bg-gradient-to-r from-red-500 to-pink-500 text-white'
-                          : 'bg-white/10 text-white/70 hover:bg-white/20'
-                      }`}
-                    >
-                      2 Imposters
-                    </button>
-                  )}
-                  {maxManualImposters >= 3 && (
-                    <button
-                      type="button"
-                      onClick={() => setManualImposters(3)}
-                      className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-all ${
-                        manualImposters === 3
-                          ? 'bg-gradient-to-r from-red-500 to-pink-500 text-white'
-                          : 'bg-white/10 text-white/70 hover:bg-white/20'
-                      }`}
-                    >
-                      3 Imposters
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  const newCount = Math.max(1, imposters - 1)
+                  setImposters(newCount)
+                }}
+                disabled={imposters <= 1}
+                className="w-12 h-12 rounded-lg bg-white/20 border border-white/30 text-white text-2xl font-bold hover:bg-white/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              >
+                −
+              </button>
+              <input
+                type="number"
+                id="imposterCount"
+                min="1"
+                max={maxImposters}
+                value={imposters}
+                onChange={(e) => {
+                  const newCount = parseInt(e.target.value) || 1
+                  const clampedCount = Math.min(maxImposters, Math.max(1, newCount))
+                  setImposters(clampedCount)
+                }}
+                className="flex-1 px-4 py-3 rounded-lg bg-white/20 border border-white/30 text-white text-2xl font-bold text-center focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  const newCount = Math.min(maxImposters, imposters + 1)
+                  setImposters(newCount)
+                }}
+                disabled={imposters >= maxImposters}
+                className="w-12 h-12 rounded-lg bg-white/20 border border-white/30 text-white text-2xl font-bold hover:bg-white/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              >
+                +
+              </button>
+            </div>
+            <p className="text-white/60 text-sm mt-2 text-center">
+              Max: {maxImposters} imposter{maxImposters !== 1 ? 's' : ''}
+            </p>
           </div>
 
           <div>
@@ -275,9 +255,12 @@ export default function SetupScreen() {
             )}
             {maxSpies === 0 && (
               <p className="text-white/60 text-sm text-center mt-2">
-                Not enough players for spies (need at least 1 civilian)
+                Max spies reached (imposters + spies ≤ {Math.floor(count / 2)})
               </p>
             )}
+            <p className="text-white/60 text-sm mt-2 text-center">
+              Max: {maxSpies} spy{maxSpies !== 1 ? 'ies' : ''} (Total imposters + spies ≤ {Math.floor(count / 2)})
+            </p>
           </div>
 
           <div>
@@ -329,7 +312,7 @@ export default function SetupScreen() {
 
           <button
             type="submit"
-            disabled={!autoCalculate && (manualImposters < 1 || manualImposters > maxManualImposters)}
+            disabled={imposters < 1 || imposters > maxImposters}
             className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-4 px-6 rounded-lg text-lg transition-all duration-200 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
           >
             Continue
