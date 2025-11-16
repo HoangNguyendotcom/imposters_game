@@ -227,11 +227,8 @@ export const vietnameseWordPairs: WordPair[] = [
   { word1: 'Con lươn', word2: 'Con trạch', hint: 'Động vật' },
   { word1: 'Con cá kiếm', word2: 'Con cá mập', hint: 'Động vật' },
   { word1: 'Con thằn lằn', word2: 'Con tắc kè', hint: 'Động vật' },
-  { word1: 'Con kỳ nhông', word2: 'Con rồng komodo', hint: 'Động vật' },
   { word1: 'Con lừa', word2: 'Con la', hint: 'Động vật' },
-  { word1: 'Con lạc đà', word2: 'Con alpaca', hint: 'Động vật' },
   { word1: 'Con ve sầu', word2: 'Con bọ ngựa', hint: 'Động vật' }, // Tạm xếp vào động vật
-  { word1: 'Con bọ rùa', word2: 'Con bọ hung', hint: 'Động vật' }, // Tạm xếp vào động vật
   { word1: 'Con đà điểu', word2: 'Con chim cánh cụt', hint: 'Động vật' },
   { word1: 'Con sên', word2: 'Con ốc sên', hint: 'Động vật' },
   { word1: 'Con đỉa', word2: 'Con giun', hint: 'Động vật' },
@@ -340,14 +337,10 @@ export const vietnameseWordPairs: WordPair[] = [
   { word1: 'Giấy', word2: 'Bút', hint: 'Học tập' },
   
   // Bộ phận cơ thể (Body parts)
-  { word1: 'Mắt', word2: 'Tai', hint: 'Cơ thể' },
-  { word1: 'Mũi', word2: 'Miệng', hint: 'Cơ thể' },
   { word1: 'Tay', word2: 'Chân', hint: 'Cơ thể' },
   { word1: 'Ngón tay', word2: 'Ngón chân', hint: 'Cơ thể' },
   { word1: 'Vai', word2: 'Cổ', hint: 'Cơ thể' },
   { word1: 'Tim', word2: 'Phổi', hint: 'Cơ thể' },
-  { word1: 'Đầu', word2: 'Tóc', hint: 'Cơ thể' },
-  { word1: 'Dạ dày', word2: 'Gan', hint: 'Cơ thể' },
   { word1: 'Khuỷu tay', word2: 'Đầu gối', hint: 'Cơ thể' },
   
   // Địa điểm (Places)
@@ -359,11 +352,11 @@ export const vietnameseWordPairs: WordPair[] = [
   { word1: 'Rạp chiếu phim', word2: 'Bảo tàng', hint: 'Địa điểm' },
   { word1: 'Chợ', word2: 'Siêu thị', hint: 'Địa điểm' },
   { word1: 'Ngân hàng', word2: 'Bưu điện', hint: 'Địa điểm' },
-  { word1: 'Sân bay', word2: 'Ga tàu', hint: 'Địa điểm' },
-  { word1: 'Bãi biển', word2: 'Núi', hint: 'Địa điểm' },
+  { word1: 'Sân bay', word2: 'Ga tàu lửa', hint: 'Địa điểm' },
+  { word1: 'Bãi biển', word2: 'Bờ sông', hint: 'Địa điểm' },
   { word1: 'Sông', word2: 'Hồ', hint: 'Địa điểm' },
   { word1: 'Nhà thờ', word2: 'Ngôi chùa', hint: 'Địa điểm' },
-  { word1: 'Đồng ruộng', word2: 'Cánh đồng', hint: 'Địa điểm' },
+  { word1: 'Đồng ruộng', word2: 'Ao cá', hint: 'Địa điểm' },
   
   // Nghề nghiệp (Professions)
   { word1: 'Bác sĩ', word2: 'Y tá', hint: 'Nghề nghiệp' },
@@ -379,16 +372,10 @@ export const vietnameseWordPairs: WordPair[] = [
   
   // Thời tiết & Thiên nhiên (Weather & Nature)
   { word1: 'Mặt trời', word2: 'Mặt trăng', hint: 'Thiên nhiên' },
-  { word1: 'Mây', word2: 'Mưa', hint: 'Thiên nhiên' },
-  { word1: 'Tuyết', word2: 'Gió', hint: 'Thiên nhiên' },
   { word1: 'Sấm', word2: 'Chớp', hint: 'Thiên nhiên' },
-  { word1: 'Hoa', word2: 'Cây', hint: 'Thiên nhiên' },
-  { word1: 'Lá', word2: 'Cành', hint: 'Thiên nhiên' },
   { word1: 'Đá', word2: 'Cát', hint: 'Thiên nhiên' },
-  { word1: 'Nước', word2: 'Lửa', hint: 'Thiên nhiên' },
   { word1: 'Sao', word2: 'Trăng', hint: 'Thiên nhiên' },
   { word1: 'Sông', word2: 'Suối', hint: 'Thiên nhiên' },
-  { word1: 'Núi', word2: 'Đồi', hint: 'Thiên nhiên' },
   
   // Thể thao (Sports)
   { word1: 'Bóng đá', word2: 'Bóng rổ', hint: 'Thể thao' },
@@ -413,8 +400,8 @@ export const vietnameseWordPairs: WordPair[] = [
   
   // Âm nhạc (Music)
   { word1: 'Đàn violin', word2: 'Đàn guitar', hint: 'Âm nhạc' },
-  { word1: 'Trống', word2: 'Sáo', hint: 'Âm nhạc' },
-  { word1: 'Nhạc', word2: 'Bài hát', hint: 'Âm nhạc' },
+  { word1: 'Trống đồng', word2: 'Trống Cơm', hint: 'Âm nhạc' },
+  { word1: 'Nhạc cụ: Sáo', word2: 'Nhạc cụ: Tiêu', hint: 'Âm nhạc' },
   { word1: 'Đàn tranh', word2: 'Đàn bầu', hint: 'Âm nhạc' },
   { word1: 'Ca sĩ', word2: 'Nhạc sĩ', hint: 'Âm nhạc' },
   { word1: 'Nhạc pop', word2: 'Nhạc rock', hint: 'Âm nhạc' },
