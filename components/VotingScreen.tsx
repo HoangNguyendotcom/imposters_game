@@ -196,7 +196,7 @@ export default function VotingScreen() {
       {/* Confirmation Dialog */}
       {showConfirmDialog && pendingVoteTargetId && (
         <div className="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center z-50 p-4">
-          <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-4xl p-8 max-w-md w-full border border-white/30">
+          <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl p-8 max-w-md w-full border border-white/20">
             <div className="text-center mb-6">
               <div className="text-5xl mb-4">❓</div>
               <h2 className="text-3xl font-bold text-white mb-4">
@@ -207,9 +207,6 @@ export default function VotingScreen() {
               </p>
               <p className="text-2xl font-bold text-purple-300 mb-4">
                 {gameState.players.find(p => p.id === pendingVoteTargetId)?.name}
-              </p>
-              <p className="text-white/60 text-sm">
-                This action cannot be undone.
               </p>
             </div>
             <div className="flex gap-3">
