@@ -206,7 +206,6 @@ export const vietnameseWordPairs: WordPair[] = [
   { word1: 'Con cá ngừ', word2: 'Con cá hồi', hint: 'Động vật' },
   { word1: 'Con cá sấu', word2: 'Con rùa', hint: 'Động vật' },
   { word1: 'Con ếch', word2: 'Con nhái', hint: 'Động vật' },
-  { word1: 'Con chim', word2: 'Con cò', hint: 'Động vật' },
   { word1: 'Con rắn', word2: 'Con trăn', hint: 'Động vật' },
   { word1: 'Con sứa', word2: 'Con sao biển', hint: 'Động vật' },
   { word1: 'Con ngỗng', word2: 'Con thiên nga', hint: 'Động vật' },
