@@ -196,7 +196,7 @@ export default function VotingScreen() {
       {/* Confirmation Dialog */}
       {showConfirmDialog && pendingVoteTargetId && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl p-8 max-w-md w-full border border-white/20">
+          <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-4xl p-8 max-w-md w-full border border-white/20">
             <div className="text-center mb-6">
               <div className="text-5xl mb-4">❓</div>
               <h2 className="text-3xl font-bold text-white mb-4">
