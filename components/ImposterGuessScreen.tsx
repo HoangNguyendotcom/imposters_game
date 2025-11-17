@@ -7,13 +7,27 @@ export default function ImposterGuessScreen() {
   const { gameState, handleImposterGuess } = useGame()
   const [guess, setGuess] = useState('')
 
-  const eliminatedPlayer = gameState.players.find(
-    (p) => p.id === gameState.eliminatedPlayerId
-  )
+  // Scenario 1: A voted-out imposter is guessing
+  const eliminatedPlayer = gameState.eliminatedPlayerId
+    ? gameState.players.find((p) => p.id === gameState.eliminatedPlayerId)
+    : null
 
-  if (!eliminatedPlayer || eliminatedPlayer.role !== 'imposter') {
-    return null
+  // Scenario 2: Final 1v1 guess
+  const lastImposter =
+    gameState.players.length === 2 ? gameState.players.find((p) => p.role === 'imposter') : null
+
+  const guessingPlayer = eliminatedPlayer || lastImposter
+
+  if (!guessingPlayer || guessingPlayer.role !== 'imposter') {
+    // This screen should not be visible if there's no imposter guessing
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <p className="text-white text-xl">Loading guess screen...</p>
+      </div>
+    )
   }
+
+  const isFinalGuess = !!lastImposter
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -28,13 +42,13 @@ export default function ImposterGuessScreen() {
         <div className="text-center mb-6">
           <div className="text-6xl mb-4">🕵️</div>
           <h1 className="text-4xl font-bold text-white mb-2">
-            {eliminatedPlayer.name}
+            {guessingPlayer.name}
           </h1>
           <p className="text-2xl text-red-300 font-bold mb-4">
             IMPOSTER
           </p>
           <p className="text-white/80 text-lg mb-2">
-            You have been voted out!
+            {isFinalGuess ? 'This is your final chance!' : 'You have been voted out!'}
           </p>
           <p className="text-white/70 text-base">
             You have one chance to guess the civilian word.
@@ -72,4 +86,3 @@ export default function ImposterGuessScreen() {
     </div>
   )
 }
-

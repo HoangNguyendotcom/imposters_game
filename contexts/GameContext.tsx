@@ -78,7 +78,7 @@ const defaultGameState: GameState = {
   currentPlayerIndex: 0,
   playerTurnTimer: 0,
   eliminatedPlayerId: null,
-  imposterCount: 1,
+  imposterCount: 0,
   spyCount: 0,
   spyWord: null,
   imposterHint: null,
@@ -336,28 +336,28 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       const civilians = updatedPlayers.filter((p) => p.role === 'civilian')
       const spies = updatedPlayers.filter((p) => p.role === 'spy')
       
-      // Check win conditions after elimination
-      const allImpostersEliminated = imposters.length === 0
-      const civilianAlive = civilians.length + spies.length
-      const civiliansEqualImposters = civilianAlive === imposters.length && imposters.length > 0
-      
-      // Spy win condition: all imposters eliminated AND spies == civilians
-      const spyWins = prev.spyCount > 0 && allImpostersEliminated && spies.length > 0 && spies.length === civilians.length
-      
-      // Civilians win: all imposters eliminated AND all spies eliminated (only if spy mode is enabled)
-      // If spy mode is not enabled, civilians win when all imposters are eliminated
-      const civiliansWin = prev.spyCount > 0 
-        ? (allImpostersEliminated && spies.length === 0)
-        : allImpostersEliminated
-      
-      if (civiliansWin || civiliansEqualImposters || spyWins) {
-        // Game ends
+      // New rule: if 2 players left (1 imposter, 1 other), imposter gets to guess
+      if (updatedPlayers.length === 2 && imposters.length === 1) {
         return {
           ...prev,
           players: updatedPlayers,
-          phase: 'results',
-          eliminatedPlayerId: null,
+          phase: 'imposter-guess',
+          eliminatedPlayerId: null, // Clear the ID, not relevant for this guess
         }
+      }
+      
+      // New win condition logic
+      // If all imposters are eliminated, check for spy/civilian win conditions
+      if (imposters.length === 0) {
+        // Spy wins if spies equal civilians
+        if (prev.spyCount > 0 && spies.length > 0 && spies.length === civilians.length) {
+          return { ...prev, players: updatedPlayers, phase: 'results', eliminatedPlayerId: null }
+        }
+        // Civilians win if all spies are also eliminated
+        if (spies.length === 0) {
+          return { ...prev, players: updatedPlayers, phase: 'results', eliminatedPlayerId: null }
+        }
+        // Otherwise, the game continues between spies and civilians
       }
       
       // Continue game - reset votes and go back to playing
@@ -404,50 +404,27 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     return civiliansWin || civiliansEqualImposters || spyWins
   }
 
-  const calculateResults = () => {
-    const imposters = gameState.players.filter((p) => p.role === 'imposter')
-    const civilians = gameState.players.filter((p) => p.role === 'civilian')
-    const spies = gameState.players.filter((p) => p.role === 'spy')
-    
-    const allImpostersEliminated = imposters.length === 0
-    const civiliansEqualImposters = civilians.length === imposters.length && imposters.length > 0
-    
-    // Determine winner
-    let winner: 'civilians' | 'imposters' | 'spy' = 'imposters'
-    
-    // If we're in results phase and there are still imposters alive,
-    // it means they won (either by guessing correctly or by civilians == imposters)
-    // We check civiliansEqualImposters first, but if that's false and imposters still exist,
-    // it means they won by guessing correctly
-    if (gameState.spyCount > 0 && allImpostersEliminated && spies.length > 0 && spies.length === civilians.length) {
-      // Spy wins: all imposters eliminated AND spies == civilians
-      winner = 'spy'
-    } else if (gameState.spyCount > 0 && allImpostersEliminated && spies.length === 0) {
-      // Civilians win: all imposters eliminated AND all spies eliminated (when spy mode is enabled)
-      winner = 'civilians'
-    } else if (gameState.spyCount === 0 && allImpostersEliminated) {
-      // Civilians win: all imposters eliminated (when spy mode is not enabled)
-      winner = 'civilians'
-    } else if (civilians.length === 1 && imposters.length === 1) {
-      // Civilians win: all imposters eliminated (when spy mode is not enabled)
-      winner = 'imposters'
-    }    else {
-      // Civilians win: all imposters eliminated (when spy mode is not enabled)
-      winner = 'civilians'
-    } 
-    // else if (civiliansEqualImposters) {
-    //   // Imposters win if civilians == imposters
-    //   winner = 'imposters'
-    // } 
-    // else if (imposters.length > 0) {
-    //   // If imposters still exist and we're in results phase, they won by guessing correctly
-    //   winner = 'imposters'
-    // }
-    
-    return { 
-      winner, 
-      votedOutPlayer: null // Not needed for final results
+  const calculateResults = (): { winner: 'civilians' | 'imposters' | 'spy'; votedOutPlayer: Player | null } => {
+    const { players, imposterGuessedCorrectly } = gameState
+
+    // Imposters have only one win condition
+    if (imposterGuessedCorrectly) {
+      return { winner: 'imposters', votedOutPlayer: null }
     }
+
+    // If imposters didn't win, the winner is determined by the remaining players.
+    const spies = players.filter((p) => p.role === 'spy')
+    const civilians = players.filter((p) => p.role === 'civilian')
+
+    // Spy win conditions:
+    // 1. They equal the number of civilians.
+    // 2. They are the only non-imposter group left (covers 1v1 loss vs spy).
+    if (spies.length > 0 && (spies.length === civilians.length || civilians.length === 0)) {
+      return { winner: 'spy', votedOutPlayer: null }
+    }
+
+    // If spies haven't won, civilians win by default (as imposters have already lost).
+    return { winner: 'civilians', votedOutPlayer: null }
   }
 
   const updateTimer = (seconds: number) => {
@@ -491,54 +468,57 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   const handleImposterGuess = (guess: string) => {
     setGameState((prev) => {
-      if (!prev.eliminatedPlayerId) return prev
-      
-      const eliminatedPlayer = prev.players.find(p => p.id === prev.eliminatedPlayerId)
-      if (!eliminatedPlayer || eliminatedPlayer.role !== 'imposter') return prev
-      
-      // Check if guess matches the civilian word (case-insensitive, trim whitespace)
-      const guessMatches = prev.civilianWord && 
-        guess.trim().toLowerCase() === prev.civilianWord.trim().toLowerCase()
-      
+      const guessMatches =
+        prev.civilianWord && guess.trim().toLowerCase() === prev.civilianWord.trim().toLowerCase()
+
+      // If guess is correct, Imposters always win
       if (guessMatches) {
-        // Imposter guessed correctly - imposters win!
         return {
           ...prev,
           phase: 'results',
           eliminatedPlayerId: null,
           imposterGuessedCorrectly: true,
         }
-      } else {
-        // Imposter guessed wrong - continue with normal elimination
+      }
+
+      // --- GUESS IS WRONG ---
+
+      // Scenario 1: Final guess with 2 players left (1 imposter, 1 other)
+      if (prev.players.length === 2 && prev.players.some((p) => p.role === 'imposter')) {
+        // Imposter guessed wrong and loses. The other player wins.
+        const finalPlayers = prev.players.filter((p) => p.role !== 'imposter')
+        return {
+          ...prev,
+          players: finalPlayers,
+          phase: 'results',
+          imposterGuessedCorrectly: false,
+          eliminatedPlayerId: null,
+        }
+      }
+
+      // Scenario 2: An imposter was just voted out and guessed wrong
+      const eliminatedPlayer = prev.players.find((p) => p.id === prev.eliminatedPlayerId)
+      if (eliminatedPlayer && eliminatedPlayer.role === 'imposter') {
+        // Continue with normal elimination of the imposter
         const updatedPlayers = prev.players.filter((p) => p.id !== prev.eliminatedPlayerId)
         const imposters = updatedPlayers.filter((p) => p.role === 'imposter')
         const civilians = updatedPlayers.filter((p) => p.role === 'civilian')
         const spies = updatedPlayers.filter((p) => p.role === 'spy')
-        
-        // Check win conditions after elimination
-        const allImpostersEliminated = imposters.length === 0
-        const civilianAlive = civilians.length + spies.length
-        const civiliansEqualImposters = civilianAlive === imposters.length && imposters.length > 0
-        
-        // Spy win condition: all imposters eliminated AND spies == civilians
-        const spyWins = prev.spyCount > 0 && allImpostersEliminated && spies.length > 0 && spies.length === civilians.length
-        
-        // Civilians win: all imposters eliminated AND all spies eliminated (only if spy mode is enabled)
-        const civiliansWin = prev.spyCount > 0 
-          ? (allImpostersEliminated && spies.length === 0)
-          : allImpostersEliminated
-        
-        if (civiliansWin || civiliansEqualImposters || spyWins) {
-          // Game ends
-          return {
-            ...prev,
-            players: updatedPlayers,
-            phase: 'results',
-            eliminatedPlayerId: null,
+
+        // Check for other win conditions now that this imposter is gone
+        if (imposters.length === 0) {
+          // Spy wins if spies equal civilians
+          if (prev.spyCount > 0 && spies.length > 0 && spies.length === civilians.length) {
+            return { ...prev, players: updatedPlayers, phase: 'results', eliminatedPlayerId: null }
           }
+          // Civilians win if all spies are also eliminated
+          if (spies.length === 0) {
+            return { ...prev, players: updatedPlayers, phase: 'results', eliminatedPlayerId: null }
+          }
+          // Otherwise, the game continues between spies and civilians
         }
-        
-        // Continue game - reset votes and go back to playing
+
+        // If game is not over, continue to next round
         return {
           ...prev,
           players: updatedPlayers.map((p) => ({
@@ -553,6 +533,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
           eliminatedPlayerId: null,
         }
       }
+
+      // Fallback if something unexpected happens
+      return prev
     })
   }
 

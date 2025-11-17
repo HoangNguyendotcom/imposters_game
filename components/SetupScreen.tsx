@@ -14,7 +14,7 @@ export default function SetupScreen() {
   } = useGame()
   const [count, setCount] = useState(gameState.playerCount || 4)
   const [imposters, setImposters] = useState(
-    gameState.imposterCount || 1
+    gameState.imposterCount || 0
   )
   const [timerEnabled, setTimerEnabled] = useState(true) // Default to enabled
   const [timerMinutes, setTimerMinutes] = useState(
