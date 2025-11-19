@@ -189,6 +189,13 @@ export default function VotingScreen() {
                   {player.name}
                 </button>
               ))}
+            <button
+              onClick={() => continueAfterTie()}
+              className="w-full bg-yellow-500/20 hover:bg-yellow-500/30 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-200 border border-yellow-500/40 text-left flex items-center justify-center"
+            >
+              <span className="mr-2 text-2xl">🤝</span>
+              Tie (Bỏ qua lượt vote này)
+            </button>
           </div>
         )}
       </div>
