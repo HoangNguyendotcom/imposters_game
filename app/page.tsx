@@ -10,6 +10,7 @@ import RevealEliminatedScreen from '@/components/RevealEliminatedScreen'
 import ImposterGuessScreen from '@/components/ImposterGuessScreen'
 import ResultsScreen from '@/components/ResultsScreen'
 import AudioManager from '@/components/AudioManager'
+import HistoryButton from '@/components/HistoryButton'
 
 function GameContent() {
   const { gameState } = useGame()
@@ -39,6 +40,7 @@ function GameContent() {
 export default function Home() {
   return (
     <GameProvider>
+      <HistoryButton />
       <AudioManager />
       <GameContent />
     </GameProvider>

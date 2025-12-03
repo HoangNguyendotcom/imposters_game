@@ -33,6 +33,14 @@ export interface GameState {
   spyWord: string | null // word assigned to spy (word1 or word2 from pair)
   imposterHint: string | null // hint assigned to imposters when spy is enabled
   imposterGuessedCorrectly: boolean // true if imposters won by guessing the word
+  historyRecorded: boolean // ensure history for this game is only recorded once
+}
+
+export interface PlayerHistoryEntry {
+  name: string
+  civilianWins: number
+  imposterWins: number
+  spyWins: number
 }
 
 interface GameContextType {
@@ -60,11 +68,15 @@ interface GameContextType {
   updatePlayerTurnTimer: (seconds: number) => void
   continueAfterTie: () => void
   handleImposterGuess: (guess: string) => void
+  playerHistory: PlayerHistoryEntry[]
+  resetHistory: () => void
+  removePlayerFromHistory: (name: string) => void
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined)
 
 const STORAGE_KEY = 'imposters_game_state'
+const HISTORY_STORAGE_KEY = 'imposters_game_history'
 
 const defaultGameState: GameState = {
   phase: 'setup',
@@ -83,10 +95,12 @@ const defaultGameState: GameState = {
   spyWord: null,
   imposterHint: null,
   imposterGuessedCorrectly: false,
+  historyRecorded: false,
 }
 
 export function GameProvider({ children }: { children: React.ReactNode }) {
   const [gameState, setGameState] = useState<GameState>(defaultGameState)
+  const [playerHistory, setPlayerHistory] = useState<PlayerHistoryEntry[]>([])
 
   // Clear localStorage on mount to reset state on every page load/refresh
   useEffect(() => {
@@ -94,6 +108,20 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem(STORAGE_KEY)
     // Reset to default state
     setGameState(defaultGameState)
+  }, [])
+
+  // Load history on mount (kept across page refreshes)
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try {
+      const stored = localStorage.getItem(HISTORY_STORAGE_KEY)
+      if (stored) {
+        const parsed = JSON.parse(stored) as PlayerHistoryEntry[]
+        setPlayerHistory(parsed)
+      }
+    } catch {
+      // ignore malformed history
+    }
   }, [])
 
   // Save to localStorage whenever gameState changes (but only during active session)
@@ -104,6 +132,46 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(gameState))
     }
   }, [gameState])
+
+  // Helper to persist history
+  const persistHistory = (next: PlayerHistoryEntry[]) => {
+    setPlayerHistory(next)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(next))
+    }
+  }
+
+  const ensurePlayersInHistory = (players: { name: string }[]) => {
+    if (!players.length) return
+
+    const updated = [...playerHistory]
+    let changed = false
+
+    players.forEach((p) => {
+      const existing = updated.find((h) => h.name === p.name)
+      if (!existing) {
+        updated.push({
+          name: p.name,
+          civilianWins: 0,
+          imposterWins: 0,
+          spyWins: 0,
+        })
+        changed = true
+      }
+    })
+
+    if (changed) {
+      persistHistory(updated)
+    }
+  }
+
+  const resetHistory = () => {
+    persistHistory([])
+  }
+
+  const removePlayerFromHistory = (name: string) => {
+    persistHistory(playerHistory.filter((entry) => entry.name !== name))
+  }
 
   const setPlayerCount = (count: number) => {
     setGameState((prev) => ({ ...prev, playerCount: count }))
@@ -122,6 +190,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   }
 
   const setPlayers = (players: Omit<Player, 'role' | 'word' | 'votes'>[]) => {
+    // Ngay sau khi nhập tên xong (NameCollectionScreen), tạo list player rỗng trong history
+    ensurePlayersInHistory(players)
+
     setGameState((prev) => ({
       ...prev,
       players: players.map((p) => ({
@@ -207,6 +278,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         phase: 'reveal-roles',
         currentRevealIndex: 0,
         imposterGuessedCorrectly: false,
+        historyRecorded: false,
       }))
     } else {
       // No spy mode: use word pairs, imposters get hint
@@ -239,6 +311,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         phase: 'reveal-roles',
         currentRevealIndex: 0,
         imposterGuessedCorrectly: false,
+        historyRecorded: false,
       }))
     }
   }
@@ -539,6 +612,49 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     })
   }
 
+  // Automatically record history when a game reaches results phase (once per game)
+  useEffect(() => {
+    if (gameState.phase !== 'results' || gameState.historyRecorded) return
+
+    const { winner } = calculateResults()
+
+    const winningRole: PlayerRole =
+      winner === 'civilians' ? 'civilian' : winner === 'imposters' ? 'imposter' : 'spy'
+
+    const winningPlayers = gameState.players.filter((p) => p.role === winningRole)
+
+    if (winningPlayers.length === 0) {
+      // Still mark as recorded to avoid infinite loop
+      setGameState((prev) => ({ ...prev, historyRecorded: true }))
+      return
+    }
+
+    const updatedHistory = [...playerHistory]
+
+    winningPlayers.forEach((player) => {
+      const idx = updatedHistory.findIndex((h) => h.name === player.name)
+      if (idx === -1) {
+        updatedHistory.push({
+          name: player.name,
+          civilianWins: winningRole === 'civilian' ? 1 : 0,
+          imposterWins: winningRole === 'imposter' ? 1 : 0,
+          spyWins: winningRole === 'spy' ? 1 : 0,
+        })
+      } else {
+        const entry = updatedHistory[idx]
+        updatedHistory[idx] = {
+          ...entry,
+          civilianWins: entry.civilianWins + (winningRole === 'civilian' ? 1 : 0),
+          imposterWins: entry.imposterWins + (winningRole === 'imposter' ? 1 : 0),
+          spyWins: entry.spyWins + (winningRole === 'spy' ? 1 : 0),
+        }
+      }
+    })
+
+    persistHistory(updatedHistory)
+    setGameState((prev) => ({ ...prev, historyRecorded: true }))
+  }, [gameState.phase, gameState.historyRecorded, gameState.players, playerHistory, calculateResults])
+
   return (
     <GameContext.Provider
       value={{
@@ -566,6 +682,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         updatePlayerTurnTimer,
         continueAfterTie,
         handleImposterGuess,
+        playerHistory,
+        resetHistory,
+        removePlayerFromHistory,
       }}
     >
       {children}
