@@ -3,7 +3,18 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import { getRandomCivilianWord, getRandomWordPair, IMPOSTER_WORD } from '@/data/vietnameseWords'
 
-export type GamePhase = 'setup' | 'names' | 'reveal-roles' | 'playing' | 'voting' | 'reveal-eliminated' | 'imposter-guess' | 'results'
+export type GamePhase =
+  | 'setup'
+  | 'online-lobby'
+  | 'names'
+  | 'reveal-roles'
+  | 'playing'
+  | 'voting'
+  | 'reveal-eliminated'
+  | 'imposter-guess'
+  | 'results'
+
+export type GameMode = 'offline' | 'online'
 
 export type PlayerRole = 'civilian' | 'imposter' | 'spy'
 
@@ -18,6 +29,7 @@ export interface Player {
 
 export interface GameState {
   phase: GamePhase
+  mode: GameMode
   playerCount: number
   roundDuration: number // in seconds, 0 means no timer (per player turn)
   players: Player[]
@@ -34,6 +46,11 @@ export interface GameState {
   imposterHint: string | null // hint assigned to imposters when spy is enabled
   imposterGuessedCorrectly: boolean // true if imposters won by guessing the word
   historyRecorded: boolean // ensure history for this game is only recorded once
+  // Online metadata
+  roomId: string | null
+  roomCode: string | null
+  isHost: boolean
+  myName: string | null
 }
 
 export interface PlayerHistoryEntry {
@@ -45,6 +62,9 @@ export interface PlayerHistoryEntry {
 
 interface GameContextType {
   gameState: GameState
+  setGameMode: (mode: GameMode) => void
+  setOnlineInfo: (info: { roomId: string; roomCode: string; isHost: boolean; myName: string }) => void
+  clearOnlineInfo: () => void
   setPlayerCount: (count: number) => void
   setRoundDuration: (duration: number) => void
   setImposterCount: (count: number) => void
@@ -80,6 +100,7 @@ const HISTORY_STORAGE_KEY = 'imposters_game_history'
 
 const defaultGameState: GameState = {
   phase: 'setup',
+  mode: 'offline',
   playerCount: 0,
   roundDuration: 0, // 0 = no timer
   players: [],
@@ -96,6 +117,10 @@ const defaultGameState: GameState = {
   imposterHint: null,
   imposterGuessedCorrectly: false,
   historyRecorded: false,
+  roomId: null,
+  roomCode: null,
+  isHost: false,
+  myName: null,
 }
 
 export function GameProvider({ children }: { children: React.ReactNode }) {
@@ -175,6 +200,32 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   const setPlayerCount = (count: number) => {
     setGameState((prev) => ({ ...prev, playerCount: count }))
+  }
+
+  const setGameMode = (mode: GameMode) => {
+    setGameState((prev) => ({ ...prev, mode }))
+  }
+
+  const setOnlineInfo = (info: { roomId: string; roomCode: string; isHost: boolean; myName: string }) => {
+    setGameState((prev) => ({
+      ...prev,
+      roomId: info.roomId,
+      roomCode: info.roomCode,
+      isHost: info.isHost,
+      myName: info.myName,
+      mode: 'online',
+    }))
+  }
+
+  const clearOnlineInfo = () => {
+    setGameState((prev) => ({
+      ...prev,
+      roomId: null,
+      roomCode: null,
+      isHost: false,
+      myName: null,
+      mode: 'offline',
+    }))
   }
 
   const setImposterCount = (count: number) => {
@@ -659,6 +710,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     <GameContext.Provider
       value={{
         gameState,
+        setGameMode,
+        setOnlineInfo,
+        clearOnlineInfo,
         setPlayerCount,
         setRoundDuration,
         setImposterCount,

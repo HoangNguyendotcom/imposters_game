@@ -5,7 +5,8 @@ import { useGame } from '@/contexts/GameContext'
 
 export default function SetupScreen() {
   const { 
-    gameState, 
+    gameState,
+    setGameMode,
     setPlayerCount, 
     setRoundDuration, 
     setPhase, 
@@ -89,8 +90,38 @@ export default function SetupScreen() {
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl p-8 md:p-12 max-w-md w-full border border-white/20">
         <h1 className="text-3xl md:text-5xl font-bold text-white text-center mb-2">
-        Imposters? 🤔
+          Imposters? 🤔
         </h1>
+
+        <div className="flex justify-center gap-3 mb-6">
+          <button
+            type="button"
+            onClick={() => {
+              setGameMode('offline')
+            }}
+            className={`px-4 py-2 rounded-full text-xs font-semibold border ${
+              gameState.mode === 'offline'
+                ? 'bg-white text-purple-700 border-white'
+                : 'bg-white/5 text-white/70 border-white/20 hover:bg-white/10'
+            }`}
+          >
+            Play Offline
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setGameMode('online')
+              setPhase('online-lobby')
+            }}
+            className={`px-4 py-2 rounded-full text-xs font-semibold border ${
+              gameState.mode === 'online'
+                ? 'bg-emerald-400 text-emerald-950 border-emerald-300'
+                : 'bg-emerald-500/10 text-emerald-100 border-emerald-400/40 hover:bg-emerald-500/20'
+            }`}
+          >
+            Play Online (beta)
+          </button>
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>

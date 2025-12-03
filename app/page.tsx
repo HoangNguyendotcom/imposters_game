@@ -3,6 +3,7 @@
 import { GameProvider, useGame } from '@/contexts/GameContext'
 import SetupScreen from '@/components/SetupScreen'
 import NameCollectionScreen from '@/components/NameCollectionScreen'
+import OnlineLobbyScreen from '@/components/OnlineLobbyScreen'
 import RoleAssignmentScreen from '@/components/RoleAssignmentScreen'
 import ActiveGameRound from '@/components/ActiveGameRound'
 import VotingScreen from '@/components/VotingScreen'
@@ -18,6 +19,8 @@ function GameContent() {
   switch (gameState.phase) {
     case 'setup':
       return <SetupScreen />
+    case 'online-lobby':
+      return <OnlineLobbyScreen />
     case 'names':
       return <NameCollectionScreen />
     case 'reveal-roles':
