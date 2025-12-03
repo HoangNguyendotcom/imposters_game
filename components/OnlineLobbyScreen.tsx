@@ -23,9 +23,9 @@ function getOrCreateClientId() {
 }
 
 function generateRoomCode() {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  const chars = '0123456789'
   let code = ''
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < 4; i++) {
     code += chars[Math.floor(Math.random() * chars.length)]
   }
   return code
@@ -349,7 +349,7 @@ export default function OnlineLobbyScreen() {
                     disabled={starting || players.length < 4}
                     className="mt-4 w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-2.5 px-4 rounded-lg text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {starting ? 'Starting...' : 'Start Game'}
+                    {starting ? 'Starting...' : 'Start Game...'}
                   </button>
                   
                 )}
