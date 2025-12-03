@@ -32,13 +32,21 @@ function generateRoomCode() {
 }
 
 export default function OnlineLobbyScreen() {
-  const { gameState, setPhase, setGameMode, setOnlineInfo } = useGame()
+  const {
+    gameState,
+    setPhase,
+    setGameMode,
+    setOnlineInfo,
+    setPlayerCount,
+    setPlayers,
+  } = useGame()
   const [view, setView] = useState<LobbyView>('choose')
   const [name, setName] = useState(gameState.myName || '')
   const [roomCodeInput, setRoomCodeInput] = useState('')
   const [roomId, setRoomId] = useState<string | null>(gameState.roomId)
-  const [players, setPlayers] = useState<RoomPlayer[]>([])
+  const [players, setLobbyPlayers] = useState<RoomPlayer[]>([])
   const [loading, setLoading] = useState(false)
+  const [starting, setStarting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const clientId = useMemo(() => getOrCreateClientId(), [])
@@ -61,7 +69,7 @@ export default function OnlineLobbyScreen() {
         return
       }
       if (!isCancelled && data) {
-        setPlayers(data as RoomPlayer[])
+        setLobbyPlayers(data as RoomPlayer[])
       }
     }
 
@@ -217,6 +225,51 @@ export default function OnlineLobbyScreen() {
     }
   }
 
+  const handleStartGameAsHost = async () => {
+    if (!roomId || !gameState.isHost) return
+
+    setStarting(true)
+    setError(null)
+
+    try {
+      const { data, error } = await supabase
+        .from('room_players')
+        .select('id, name')
+        .eq('room_id', roomId)
+        .order('created_at', { ascending: true })
+
+      if (error || !data || data.length === 0) {
+        setError('Không thể lấy danh sách người chơi để bắt đầu game.')
+        setStarting(false)
+        return
+      }
+
+      if (data.length < 4) {
+        setError('Cần ít nhất 4 người chơi để bắt đầu game online.')
+        setStarting(false)
+        return
+      }
+
+      const playerList = data.map((p) => ({
+        id: String(p.id),
+        name: p.name as string,
+      }))
+
+      // Cập nhật số lượng player và dùng tên từ room_players
+      setPlayerCount(playerList.length)
+      setPlayers(playerList)
+
+      // Sau khi có danh sách players, chuyển host sang màn Setup để cấu hình imposters/spies/timer
+      setPhase('setup')
+    } catch (err: any) {
+      // eslint-disable-next-line no-console
+      console.error(err)
+      setError('Có lỗi khi bắt đầu game. Thử lại sau.')
+    } finally {
+      setStarting(false)
+    }
+  }
+
   const title = (() => {
     if (view === 'create') return 'Create Online Room'
     if (view === 'join') return 'Join Online Room'
@@ -287,6 +340,17 @@ export default function OnlineLobbyScreen() {
                       </li>
                     ))}
                   </ul>
+                )}
+
+                {gameState.isHost && (
+                  <button
+                    type="button"
+                    onClick={handleStartGameAsHost}
+                    disabled={starting || players.length < 4}
+                    className="mt-4 w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-2.5 px-4 rounded-lg text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {starting ? 'Starting...' : 'Start Game (min 4 players)'}
+                  </button>
                 )}
               </div>
             )}

@@ -11,7 +11,8 @@ export default function SetupScreen() {
     setRoundDuration, 
     setPhase, 
     setImposterCount,
-    setSpyCount
+    setSpyCount,
+    startGame,
   } = useGame()
   const [count, setCount] = useState(gameState.playerCount || 4)
   const [imposters, setImposters] = useState(
@@ -24,6 +25,8 @@ export default function SetupScreen() {
   const [spyCount, setSpyCountLocal] = useState(
     gameState.spyCount !== undefined ? gameState.spyCount : 0
   )
+
+  const isOnline = gameState.mode === 'online'
 
   // Imposter options based on player count:
   // If players < 7: max 1 imposter
@@ -56,6 +59,13 @@ export default function SetupScreen() {
     }
   }, [count, imposters, spyCount])
 
+  // Khi vào từ online lobby, đồng bộ lại count với số player trong room
+  useEffect(() => {
+    if (isOnline && gameState.playerCount > 0) {
+      setCount(gameState.playerCount)
+    }
+  }, [isOnline, gameState.playerCount])
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (count >= 4 && count <= 10) {
@@ -74,7 +84,13 @@ export default function SetupScreen() {
         finalSpyCount = Math.max(0, maxTotal - imposters)
         setSpyCountLocal(finalSpyCount)
       }
-      setPlayerCount(count)
+      // Cập nhật cấu hình chung
+      if (!isOnline) {
+        setPlayerCount(count)
+      } else if (gameState.playerCount !== count) {
+        // đảm bảo state khớp số player trong room
+        setPlayerCount(count)
+      }
       setImposterCount(imposters)
       if (timerEnabled) {
         setRoundDuration(timerMinutes * 60)
@@ -82,7 +98,14 @@ export default function SetupScreen() {
         setRoundDuration(0)
       }
       setSpyCount(finalSpyCount)
-      setPhase('names')
+
+      if (isOnline) {
+        // Online: tên đã có từ room_players, bỏ qua NameCollectionScreen
+        startGame()
+      } else {
+        // Offline: host sẽ nhập tên ở NameCollectionScreen
+        setPhase('names')
+      }
     }
   }
 
@@ -142,7 +165,7 @@ export default function SetupScreen() {
                     setImposters(newMax)
                   }
                 }}
-                disabled={count <= 4}
+                disabled={isOnline || count <= 4}
                 className="w-12 h-12 rounded-lg bg-white/20 border border-white/30 text-white text-2xl font-bold hover:bg-white/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
               >
                 −
@@ -153,7 +176,9 @@ export default function SetupScreen() {
                 min="4"
                 max="10"
                 value={count}
+                readOnly={isOnline}
                 onChange={(e) => {
+                  if (isOnline) return
                   const newCount = parseInt(e.target.value) || 4
                   const clampedCount = Math.min(10, Math.max(4, newCount))
                   setCount(clampedCount)
@@ -174,7 +199,7 @@ export default function SetupScreen() {
                     setImposters(newMax)
                   }
                 }}
-                disabled={count >= 10}
+                disabled={isOnline || count >= 10}
                 className="w-12 h-12 rounded-lg bg-white/20 border border-white/30 text-white text-2xl font-bold hover:bg-white/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
               >
                 +
