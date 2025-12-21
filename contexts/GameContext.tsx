@@ -695,18 +695,18 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         if (winner === 'spy') {
           basePoints = 150
           breakdown.push('+150: Spy win condition met')
-
-          // Voting bonus for voting for civilians (only if spy wins)
-          gameState.voteHistory
-            .filter((v) => v.voterId === player.id && v.targetRole === 'civilian')
-            .forEach((vote) => {
-              votingPoints += 20
-              breakdown.push(`+20: Voted for Civilian`)
-            })
         } else {
           basePoints = 0
           breakdown.push('0: Spy did not win')
         }
+
+        // Voting bonus for voting for civilians (ALWAYS awarded)
+        gameState.voteHistory
+          .filter((v) => v.voterId === player.id && v.targetRole === 'civilian')
+          .forEach((vote) => {
+            votingPoints += 20
+            breakdown.push(`+20: Voted for Civilian`)
+          })
       } else if (player.role === 'imposter') {
         if (winner === 'imposters') {
           basePoints = 150
