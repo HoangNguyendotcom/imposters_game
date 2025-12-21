@@ -356,7 +356,7 @@ export default function OnlineLobbyScreen() {
               </div>
             )}
               <p className="text-white/60 text-sm mt-2 text-center">
-                Make sure to Setup the game before starting!
+                Game on, babe!!!
               </p>
           </div>
         )}

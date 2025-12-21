@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useState, useEffect } from 'react'
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { getRandomCivilianWord, getRandomWordPair, IMPOSTER_WORD } from '@/data/vietnameseWords'
 
 export type GamePhase =
@@ -27,6 +27,34 @@ export interface Player {
   votes: number // votes received
 }
 
+// Track each vote cast in a round
+export interface VoteRecord {
+  voterId: string
+  voterRole: PlayerRole
+  targetId: string
+  targetRole: PlayerRole
+  round: number
+}
+
+// Track each elimination event
+export interface EliminationRecord {
+  playerId: string
+  playerName: string
+  playerRole: PlayerRole
+  round: number
+  voterIds: string[] // IDs of players who voted for this player
+}
+
+// Final points breakdown for each player
+export interface PlayerPointsBreakdown {
+  playerId: string
+  playerName: string
+  role: PlayerRole
+  survived: boolean
+  totalPoints: number
+  breakdown: string[] // Human-readable breakdown
+}
+
 export interface GameState {
   phase: GamePhase
   mode: GameMode
@@ -51,6 +79,11 @@ export interface GameState {
   roomCode: string | null
   isHost: boolean
   myName: string | null
+  // Points tracking
+  currentRound: number
+  voteHistory: VoteRecord[]
+  eliminationHistory: EliminationRecord[]
+  allPlayersSnapshot: Player[] // Snapshot at game start for scoring
 }
 
 export interface PlayerHistoryEntry {
@@ -58,6 +91,8 @@ export interface PlayerHistoryEntry {
   civilianWins: number
   imposterWins: number
   spyWins: number
+  totalPoints: number
+  gamesPlayed: number
 }
 
 interface GameContextType {
@@ -81,6 +116,7 @@ interface GameContextType {
   processElimination: () => void
   checkGameEnd: (eliminatedPlayerId?: string) => boolean
   calculateResults: () => { winner: 'civilians' | 'imposters' | 'spy'; votedOutPlayer: Player | null }
+  calculatePoints: () => PlayerPointsBreakdown[]
   resetGame: () => void
   playAgain: () => void
   resetToRevealRoles: () => void
@@ -121,6 +157,10 @@ const defaultGameState: GameState = {
   roomCode: null,
   isHost: false,
   myName: null,
+  currentRound: 0,
+  voteHistory: [],
+  eliminationHistory: [],
+  allPlayersSnapshot: [],
 }
 
 export function GameProvider({ children }: { children: React.ReactNode }) {
@@ -142,7 +182,13 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       const stored = localStorage.getItem(HISTORY_STORAGE_KEY)
       if (stored) {
         const parsed = JSON.parse(stored) as PlayerHistoryEntry[]
-        setPlayerHistory(parsed)
+        // Migrate old entries to include new fields
+        const migrated = parsed.map((entry) => ({
+          ...entry,
+          totalPoints: entry.totalPoints ?? 0,
+          gamesPlayed: entry.gamesPlayed ?? (entry.civilianWins + entry.imposterWins + entry.spyWins),
+        }))
+        setPlayerHistory(migrated)
       }
     } catch {
       // ignore malformed history
@@ -159,14 +205,14 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   }, [gameState])
 
   // Helper to persist history
-  const persistHistory = (next: PlayerHistoryEntry[]) => {
+  const persistHistory = useCallback((next: PlayerHistoryEntry[]) => {
     setPlayerHistory(next)
     if (typeof window !== 'undefined') {
       localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(next))
     }
-  }
+  }, [])
 
-  const ensurePlayersInHistory = (players: { name: string }[]) => {
+  const ensurePlayersInHistory = useCallback((players: { name: string }[]) => {
     if (!players.length) return
 
     const updated = [...playerHistory]
@@ -180,6 +226,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
           civilianWins: 0,
           imposterWins: 0,
           spyWins: 0,
+          totalPoints: 0,
+          gamesPlayed: 0,
         })
         changed = true
       }
@@ -188,15 +236,15 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     if (changed) {
       persistHistory(updated)
     }
-  }
+  }, [playerHistory, persistHistory])
 
-  const resetHistory = () => {
+  const resetHistory = useCallback(() => {
     persistHistory([])
-  }
+  }, [persistHistory])
 
-  const removePlayerFromHistory = (name: string) => {
+  const removePlayerFromHistory = useCallback((name: string) => {
     persistHistory(playerHistory.filter((entry) => entry.name !== name))
-  }
+  }, [playerHistory, persistHistory])
 
   const setPlayerCount = (count: number) => {
     setGameState((prev) => ({ ...prev, playerCount: count }))
@@ -330,6 +378,10 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         currentRevealIndex: 0,
         imposterGuessedCorrectly: false,
         historyRecorded: false,
+        currentRound: 1,
+        voteHistory: [],
+        eliminationHistory: [],
+        allPlayersSnapshot: finalPlayers.map(p => ({ ...p })),
       }))
     } else {
       // No spy mode: use word pairs, imposters get hint
@@ -363,6 +415,10 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         currentRevealIndex: 0,
         imposterGuessedCorrectly: false,
         historyRecorded: false,
+        currentRound: 1,
+        voteHistory: [],
+        eliminationHistory: [],
+        allPlayersSnapshot: finalPlayers.map(p => ({ ...p })),
       }))
     }
   }
@@ -424,6 +480,18 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   const vote = (voterId: string, targetId: string) => {
     setGameState((prev) => {
+      const voter = prev.players.find((p) => p.id === voterId)
+      const target = prev.players.find((p) => p.id === targetId)
+
+      // Record the vote
+      const voteRecord: VoteRecord = {
+        voterId,
+        voterRole: voter?.role || 'civilian',
+        targetId,
+        targetRole: target?.role || 'civilian',
+        round: prev.currentRound,
+      }
+
       const updatedPlayers = prev.players.map((player) => {
         if (player.id === voterId) {
           return { ...player, votedFor: targetId }
@@ -433,20 +501,42 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         }
         return player
       })
-      return { ...prev, players: updatedPlayers }
+
+      return {
+        ...prev,
+        players: updatedPlayers,
+        voteHistory: [...prev.voteHistory, voteRecord],
+      }
     })
   }
 
   const eliminatePlayer = (playerId: string) => {
     setGameState((prev) => {
       const eliminatedPlayer = prev.players.find(p => p.id === playerId)
+
+      // Record voters for this player
+      const voterIds = prev.players
+        .filter(p => p.votedFor === playerId)
+        .map(p => p.id)
+
+      // Create elimination record
+      const eliminationRecord: EliminationRecord = {
+        playerId,
+        playerName: eliminatedPlayer?.name || '',
+        playerRole: eliminatedPlayer?.role || 'civilian',
+        round: prev.currentRound,
+        voterIds,
+      }
+
       // If eliminated player is an imposter, go to guess phase
       // Otherwise, go to reveal-eliminated phase
       const nextPhase = eliminatedPlayer?.role === 'imposter' ? 'imposter-guess' : 'reveal-eliminated'
+
       return {
         ...prev,
         eliminatedPlayerId: playerId,
         phase: nextPhase,
+        eliminationHistory: [...prev.eliminationHistory, eliminationRecord],
       }
     })
   }
@@ -497,6 +587,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         currentPlayerIndex: 0,
         playerTurnTimer: prev.roundDuration,
         eliminatedPlayerId: null,
+        currentRound: prev.currentRound + 1,
       }
     })
   }
@@ -528,7 +619,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     return civiliansWin || civiliansEqualImposters || spyWins
   }
 
-  const calculateResults = (): { winner: 'civilians' | 'imposters' | 'spy'; votedOutPlayer: Player | null } => {
+  const calculateResults = useCallback((): { winner: 'civilians' | 'imposters' | 'spy'; votedOutPlayer: Player | null } => {
     const { players, imposterGuessedCorrectly } = gameState
 
     // Imposters have only one win condition
@@ -549,7 +640,111 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
     // If spies haven't won, civilians win by default (as imposters have already lost).
     return { winner: 'civilians', votedOutPlayer: null }
-  }
+  }, [gameState])
+
+  const calculatePoints = useCallback((): PlayerPointsBreakdown[] => {
+    const { winner } = calculateResults()
+    const pointsBreakdown: PlayerPointsBreakdown[] = []
+
+    // Use allPlayersSnapshot which contains all original players with their roles
+    gameState.allPlayersSnapshot.forEach((player) => {
+      let basePoints = 0
+      let votingPoints = 0
+      let roundSurvivalPoints = 0
+      const breakdown: string[] = []
+
+      // Check if player survived (still in players array)
+      const survived = gameState.players.some((p) => p.id === player.id)
+
+      // Calculate rounds survived for this player
+      const playerEliminationRecord = gameState.eliminationHistory.find((e) => e.playerId === player.id)
+      const roundsSurvived = playerEliminationRecord
+        ? playerEliminationRecord.round - 1
+        : gameState.currentRound
+
+      if (player.role === 'civilian') {
+        if (winner === 'civilians') {
+          if (survived) {
+            basePoints = 100
+            breakdown.push('+100: Team won and survived')
+          } else {
+            basePoints = 50
+            breakdown.push('+50: Team won but was eliminated')
+          }
+        } else {
+          basePoints = 0
+          breakdown.push('0: Team lost')
+        }
+
+        // Calculate voting points for ALL votes (not just eliminations)
+        gameState.voteHistory
+          .filter((v) => v.voterId === player.id)
+          .forEach((vote) => {
+            if (vote.targetRole === 'imposter') {
+              votingPoints += 30
+              breakdown.push(`+30: Voted for Imposter`)
+            } else if (vote.targetRole === 'spy') {
+              votingPoints += 15
+              breakdown.push(`+15: Voted for Spy`)
+            } else if (vote.targetRole === 'civilian') {
+              votingPoints -= 10
+              breakdown.push(`-10: Voted for Civilian`)
+            }
+          })
+      } else if (player.role === 'spy') {
+        if (winner === 'spy') {
+          basePoints = 150
+          breakdown.push('+150: Spy win condition met')
+
+          // Voting bonus for voting for civilians (only if spy wins)
+          gameState.voteHistory
+            .filter((v) => v.voterId === player.id && v.targetRole === 'civilian')
+            .forEach((vote) => {
+              votingPoints += 20
+              breakdown.push(`+20: Voted for Civilian`)
+            })
+        } else {
+          basePoints = 0
+          breakdown.push('0: Spy did not win')
+        }
+      } else if (player.role === 'imposter') {
+        if (winner === 'imposters') {
+          basePoints = 150
+          breakdown.push('+150: Guessed keyword correctly')
+        } else {
+          basePoints = 0
+          breakdown.push('0: Failed to guess keyword')
+        }
+
+        // Round survival points (ALWAYS awarded regardless of win/loss)
+        roundSurvivalPoints = roundsSurvived * 30
+        if (roundSurvivalPoints > 0) {
+          breakdown.push(`+${roundSurvivalPoints}: Survived ${roundsSurvived} round(s)`)
+        }
+
+        // Voting bonus for voting for civilians
+        gameState.voteHistory
+          .filter((v) => v.voterId === player.id && v.targetRole === 'civilian')
+          .forEach((vote) => {
+            votingPoints += 20
+            breakdown.push(`+20: Voted for Civilian`)
+          })
+      }
+
+      const totalPoints = basePoints + votingPoints + roundSurvivalPoints
+
+      pointsBreakdown.push({
+        playerId: player.id,
+        playerName: player.name,
+        role: player.role,
+        survived,
+        totalPoints,
+        breakdown,
+      })
+    })
+
+    return pointsBreakdown.sort((a, b) => b.totalPoints - a.totalPoints)
+  }, [gameState, calculateResults])
 
   const updateTimer = (seconds: number) => {
     setGameState((prev) => ({ ...prev, timer: seconds }))
@@ -655,6 +850,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
           currentPlayerIndex: 0,
           playerTurnTimer: prev.roundDuration,
           eliminatedPlayerId: null,
+          currentRound: prev.currentRound + 1,
         }
       }
 
@@ -668,43 +864,46 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     if (gameState.phase !== 'results' || gameState.historyRecorded) return
 
     const { winner } = calculateResults()
-
-    const winningRole: PlayerRole =
-      winner === 'civilians' ? 'civilian' : winner === 'imposters' ? 'imposter' : 'spy'
-
-    const winningPlayers = gameState.players.filter((p) => p.role === winningRole)
-
-    if (winningPlayers.length === 0) {
-      // Still mark as recorded to avoid infinite loop
-      setGameState((prev) => ({ ...prev, historyRecorded: true }))
-      return
-    }
+    const pointsBreakdown = calculatePoints()
 
     const updatedHistory = [...playerHistory]
 
-    winningPlayers.forEach((player) => {
-      const idx = updatedHistory.findIndex((h) => h.name === player.name)
+    pointsBreakdown.forEach((playerPoints) => {
+      const idx = updatedHistory.findIndex((h) => h.name === playerPoints.playerName)
+
+      const isWinner =
+        (winner === 'civilians' && playerPoints.role === 'civilian') ||
+        (winner === 'imposters' && playerPoints.role === 'imposter') ||
+        (winner === 'spy' && playerPoints.role === 'spy')
+
       if (idx === -1) {
         updatedHistory.push({
-          name: player.name,
-          civilianWins: winningRole === 'civilian' ? 1 : 0,
-          imposterWins: winningRole === 'imposter' ? 1 : 0,
-          spyWins: winningRole === 'spy' ? 1 : 0,
+          name: playerPoints.playerName,
+          civilianWins: isWinner && playerPoints.role === 'civilian' ? 1 : 0,
+          imposterWins: isWinner && playerPoints.role === 'imposter' ? 1 : 0,
+          spyWins: isWinner && playerPoints.role === 'spy' ? 1 : 0,
+          totalPoints: playerPoints.totalPoints,
+          gamesPlayed: 1,
         })
       } else {
         const entry = updatedHistory[idx]
+        const newTotalPoints = entry.totalPoints + playerPoints.totalPoints
+        const newGamesPlayed = entry.gamesPlayed + 1
+
         updatedHistory[idx] = {
           ...entry,
-          civilianWins: entry.civilianWins + (winningRole === 'civilian' ? 1 : 0),
-          imposterWins: entry.imposterWins + (winningRole === 'imposter' ? 1 : 0),
-          spyWins: entry.spyWins + (winningRole === 'spy' ? 1 : 0),
+          civilianWins: entry.civilianWins + (isWinner && playerPoints.role === 'civilian' ? 1 : 0),
+          imposterWins: entry.imposterWins + (isWinner && playerPoints.role === 'imposter' ? 1 : 0),
+          spyWins: entry.spyWins + (isWinner && playerPoints.role === 'spy' ? 1 : 0),
+          totalPoints: newTotalPoints,
+          gamesPlayed: newGamesPlayed,
         }
       }
     })
 
     persistHistory(updatedHistory)
     setGameState((prev) => ({ ...prev, historyRecorded: true }))
-  }, [gameState.phase, gameState.historyRecorded, gameState.players, playerHistory, calculateResults])
+  }, [gameState.phase, gameState.historyRecorded, calculateResults, calculatePoints, playerHistory, persistHistory])
 
   return (
     <GameContext.Provider
@@ -729,6 +928,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         processElimination,
         checkGameEnd,
         calculateResults,
+        calculatePoints,
         resetGame,
         playAgain,
         resetToRevealRoles,

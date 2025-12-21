@@ -11,11 +11,7 @@ export default function HistoryButton() {
 
   const sortedHistory = useMemo(
     () =>
-      [...playerHistory].sort((a, b) => {
-        const aTotal = a.civilianWins + a.imposterWins + a.spyWins
-        const bTotal = b.civilianWins + b.imposterWins + b.spyWins
-        return bTotal - aTotal
-      }),
+      [...playerHistory].sort((a, b) => b.totalPoints - a.totalPoints),
     [playerHistory]
   )
 
@@ -44,7 +40,7 @@ export default function HistoryButton() {
 
             <div className="px-6 py-3 border-b border-white/10 flex items-center justify-between gap-3 bg-slate-900/60">
               <p className="text-xs text-white/70">
-                Lưu số lần chiến thắng của từng người chơi theo vai trò (Civilian / Imposter / Spy).
+                Lưu điểm số và số lần chiến thắng của từng người chơi theo vai trò (Civilian / Imposter / Spy).
               </p>
               <button
                 type="button"
@@ -67,16 +63,15 @@ export default function HistoryButton() {
                     <thead>
                       <tr className="bg-slate-800/90 text-xs uppercase tracking-wide text-white/70">
                         <th className="px-4 py-2 rounded-l-lg">Player</th>
-                        <th className="px-3 py-2 text-center">Total Wins</th>
-                        <th className="px-3 py-2 text-center">Civilian</th>
-                        <th className="px-3 py-2 text-center">Imposter</th>
-                        <th className="px-3 py-2 text-center">Spy</th>
+                        <th className="px-3 py-2 text-center">Total Points</th>
+                        <th className="px-3 py-2 text-center">Games</th>
+                        <th className="px-3 py-2 text-center">Wins (C/I/S)</th>
                         <th className="px-3 py-2 rounded-r-lg text-center">Action</th>
                       </tr>
                     </thead>
                     <tbody>
                       {sortedHistory.map((entry) => {
-                        const total =
+                        const totalWins =
                           entry.civilianWins + entry.imposterWins + entry.spyWins
 
                         return (
@@ -90,24 +85,23 @@ export default function HistoryButton() {
                               </div>
                             </td>
                             <td className="px-3 py-2 text-center">
-                              <span className="text-white font-semibold">
-                                {total}
+                              <span className="text-yellow-300 font-bold text-base">
+                                {entry.totalPoints || 0}
                               </span>
                             </td>
                             <td className="px-3 py-2 text-center">
-                              <span className="text-blue-300 font-semibold">
-                                {entry.civilianWins}
+                              <span className="text-white/80">
+                                {entry.gamesPlayed || 0}
                               </span>
                             </td>
                             <td className="px-3 py-2 text-center">
-                              <span className="text-red-300 font-semibold">
-                                {entry.imposterWins}
-                              </span>
-                            </td>
-                            <td className="px-3 py-2 text-center">
-                              <span className="text-purple-300 font-semibold">
-                                {entry.spyWins}
-                              </span>
+                              <div className="flex gap-1 justify-center text-xs">
+                                <span className="text-blue-300">{entry.civilianWins}C</span>
+                                <span className="text-white/40">/</span>
+                                <span className="text-red-300">{entry.imposterWins}I</span>
+                                <span className="text-white/40">/</span>
+                                <span className="text-purple-300">{entry.spyWins}S</span>
+                              </div>
                             </td>
                             <td className="px-3 py-2 rounded-r-lg text-center">
                               <button

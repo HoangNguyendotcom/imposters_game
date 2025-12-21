@@ -3,12 +3,28 @@
 import { useGame } from '@/contexts/GameContext'
 
 export default function ResultsScreen() {
-  const { gameState, resetGame, playAgain, calculateResults } = useGame()
+  const { gameState, resetGame, playAgain, calculateResults, calculatePoints } = useGame()
 
   const { winner, votedOutPlayer } = calculateResults()
+  const pointsBreakdown = calculatePoints()
   const imposters = gameState.players.filter((p) => p.role === 'imposter')
   const civilians = gameState.players.filter((p) => p.role === 'civilian')
   const spies = gameState.players.filter((p) => p.role === 'spy')
+
+  // Calculate ranks for each player (1-based, handles ties)
+  const getRank = (player: typeof pointsBreakdown[0]) => {
+    const higherScores = pointsBreakdown.filter(p => p.totalPoints > player.totalPoints)
+    const uniqueHigherScores = new Set(higherScores.map(p => p.totalPoints))
+    return uniqueHigherScores.size + 1
+  }
+
+  // Get medal icon based on rank
+  const getMedalIcon = (rank: number) => {
+    if (rank === 1) return '🥇'
+    if (rank === 2) return '🥈'
+    if (rank === 3) return '🥉'
+    return ''
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
@@ -31,55 +47,63 @@ export default function ResultsScreen() {
           </p>
         </div>
 
-        {/* <div className="grid md:grid-cols-2 gap-6 mb-8">
-          <div className="bg-red-500/20 rounded-lg p-6 border-2 border-red-500/50">
-            <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
-              <span>🕵️</span> Imposter{imposters.length > 1 ? 's' : ''}
-            </h2>
-            <div className="space-y-3">
-              {imposters.map((player) => (
-                <div
-                  key={player.id}
-                  className="bg-white/10 rounded-lg p-4"
-                >
-                  <div className="text-white font-semibold text-lg mb-1">
-                    {player.name}
-                  </div>
-                  <div className="text-red-300 font-bold text-xl">
-                    {player.word}
-                  </div>
-                  <div className="text-white/60 text-sm mt-1">
-                    Received {player.votes} {player.votes === 1 ? 'vote' : 'votes'}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+        {/* Points Leaderboard */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-white mb-4 text-center">
+            Points Breakdown
+          </h2>
+          <div className="space-y-3">
+            {pointsBreakdown.map((player) => {
+              const rank = getRank(player)
+              const medalIcon = getMedalIcon(rank)
 
-          <div className="bg-blue-500/20 rounded-lg p-6 border-2 border-blue-500/50">
-            <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
-              <span>👤</span> Civilian{civilians.length > 1 ? 's' : ''}
-            </h2>
-            <div className="space-y-3">
-              {civilians.map((player) => (
+              return (
                 <div
-                  key={player.id}
-                  className="bg-white/10 rounded-lg p-4"
+                  key={player.playerId}
+                  className={`bg-white/10 rounded-lg p-4 border ${
+                    rank === 1 ? 'border-yellow-500/50' : 'border-white/20'
+                  }`}
                 >
-                  <div className="text-white font-semibold text-lg mb-1">
-                    {player.name}
+                  <div className="flex justify-between items-center mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl">
+                        {medalIcon}
+                      </span>
+                      <span className="text-white font-semibold text-lg">
+                        {player.playerName}
+                      </span>
+                      <span className={`text-sm px-2 py-0.5 rounded ${
+                        player.role === 'imposter' ? 'bg-red-500/30 text-red-300' :
+                        player.role === 'spy' ? 'bg-purple-500/30 text-purple-300' :
+                        'bg-blue-500/30 text-blue-300'
+                      }`}>
+                        {player.role}
+                      </span>
+                      {!player.survived && (
+                        <span className="text-xs text-white/50">(eliminated)</span>
+                      )}
+                    </div>
+                    <span className="text-2xl font-bold text-yellow-300">
+                      {player.totalPoints} pts
+                    </span>
                   </div>
-                  <div className="text-blue-300 font-bold text-xl">
-                    {player.word}
-                  </div>
-                  <div className="text-white/60 text-sm mt-1">
-                    Received {player.votes} {player.votes === 1 ? 'vote' : 'votes'}
-                  </div>
+
+                  {/* Expandable breakdown */}
+                  <details className="text-sm text-white/70">
+                    <summary className="cursor-pointer hover:text-white/90">
+                      View breakdown
+                    </summary>
+                    <ul className="mt-2 space-y-1 pl-4">
+                      {player.breakdown.map((item, i) => (
+                        <li key={i}>{item}</li>
+                      ))}
+                    </ul>
+                  </details>
                 </div>
-              ))}
-            </div>
+              )
+            })}
           </div>
-        </div> */}
+        </div>
 
         <div className="bg-white/5 rounded-lg p-4 mb-6 border border-white/10">
           <p className="text-white/80 text-center">
