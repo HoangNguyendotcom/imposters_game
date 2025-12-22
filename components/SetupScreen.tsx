@@ -101,7 +101,7 @@ export default function SetupScreen() {
 
       if (isOnline) {
         // Online: tên đã có từ room_players, bỏ qua NameCollectionScreen
-        startGame()
+        startGame(undefined, imposters, finalSpyCount)
       } else {
         // Offline: host sẽ nhập tên ở NameCollectionScreen
         setPhase('names')

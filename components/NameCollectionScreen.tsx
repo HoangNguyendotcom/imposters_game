@@ -41,7 +41,7 @@ export default function NameCollectionScreen() {
           name: name.trim(),
         }))
         setPlayers(players)
-        startGame(players)
+        startGame(players, gameState.imposterCount, gameState.spyCount)
       }
     }
   }

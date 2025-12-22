@@ -111,9 +111,9 @@ interface GameContextType {
   setSpyCount: (count: number) => void
   setPlayers: (players: Omit<Player, 'role' | 'word' | 'votes'>[]) => void
   setPhase: (phase: GamePhase) => void
-  assignRoles: (players?: Omit<Player, 'role' | 'word' | 'votes'>[]) => void
+  assignRoles: (players?: Omit<Player, 'role' | 'word' | 'votes'>[], imposterCount?: number, spyCount?: number) => void
   revealNextPlayer: () => void
-  startGame: (players?: Omit<Player, 'role' | 'word' | 'votes'>[]) => void
+  startGame: (players?: Omit<Player, 'role' | 'word' | 'votes'>[], imposterCount?: number, spyCount?: number) => void
   endRound: () => void
   nextPlayerTurn: () => void
   vote: (voterId: string, targetId: string) => void
@@ -333,10 +333,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const assignRoles = async (playersToAssign?: Omit<Player, 'role' | 'word' | 'votes'>[]) => {
+  const assignRoles = async (playersToAssign?: Omit<Player, 'role' | 'word' | 'votes'>[], imposterCount?: number, spyCount?: number) => {
     const players = playersToAssign || gameState.players
     const playerCount = players.length
-    const imposterCount = gameState.imposterCount
+    const finalImposterCount = imposterCount ?? gameState.imposterCount
+    const finalSpyCount = spyCount ?? gameState.spyCount
 
     // Store original players for playAgain
     const originalPlayers = players.map((p) => ({
@@ -351,18 +352,18 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     let spyWord: string | null = null
     let imposterHint: string | null = null
 
-    if (gameState.spyCount > 0) {
+    if (finalSpyCount > 0) {
       // Spy mode: use word pairs
       const wordPair = getRandomWordPair()
       const randomAssignment = Math.random() < 0.5
       civilianWord = randomAssignment ? wordPair.word1 : wordPair.word2
       spyWord = randomAssignment ? wordPair.word2 : wordPair.word1
       imposterHint = wordPair.hint
-      
+
       // Step 2: Assign roles (imposters, spies, civilians)
       // First N are imposters, next spyCount are spies, rest are civilians
       const playersWithRoles = shuffled.map((player, index) => {
-        if (index < imposterCount) {
+        if (index < finalImposterCount) {
           return {
             ...player,
             role: 'imposter' as PlayerRole,
@@ -370,7 +371,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
             votes: 0,
             votedFor: undefined,
           }
-        } else if (index < imposterCount + gameState.spyCount) {
+        } else if (index < finalImposterCount + finalSpyCount) {
           // Spies
           return {
             ...player,
@@ -400,6 +401,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         civilianWord,
         spyWord,
         imposterHint,
+        imposterCount: finalImposterCount,
+        spyCount: finalSpyCount,
         phase: 'reveal-roles',
         currentRevealIndex: 0,
         imposterGuessedCorrectly: false,
@@ -422,7 +425,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       
       // Step 2: Assign first N players as imposters, rest as civilians
       const playersWithRoles = shuffled.map((player, index) => {
-        const isImposter = index < imposterCount
+        const isImposter = index < finalImposterCount
         return {
           ...player,
           role: (isImposter ? 'imposter' : 'civilian') as PlayerRole,
@@ -442,6 +445,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         civilianWord,
         spyWord: null,
         imposterHint,
+        imposterCount: finalImposterCount,
+        spyCount: finalSpyCount,
         phase: 'reveal-roles',
         currentRevealIndex: 0,
         imposterGuessedCorrectly: false,
@@ -513,8 +518,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
           currentPlayerIndex: 0,
           playerTurnTimer: 0,
           roundDuration: gameState.roundDuration,
-          imposterCount: gameState.imposterCount,
-          spyCount: gameState.spyCount,
+          imposterCount: finalImposterCount,
+          spyCount: finalSpyCount,
           eliminatedPlayerId: null,
           imposterGuessedCorrectly: false,
           players: players.map(p => ({
@@ -555,8 +560,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const startGame = (playersToAssign?: Omit<Player, 'role' | 'word' | 'votes'>[]) => {
-    assignRoles(playersToAssign)
+  const startGame = (playersToAssign?: Omit<Player, 'role' | 'word' | 'votes'>[], imposterCount?: number, spyCount?: number) => {
+    assignRoles(playersToAssign, imposterCount, spyCount)
   }
 
   const endRound = () => {
