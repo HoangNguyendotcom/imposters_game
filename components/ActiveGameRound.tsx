@@ -23,13 +23,20 @@ export default function ActiveGameRound() {
       const interval = setInterval(() => {
         setPlayerTimer((prev) => {
           const newTime = Math.max(0, prev - 1)
-          updatePlayerTurnTimer(newTime)
+
+          // Only host updates the global timer state in online mode
+          if (!isOnlineMode || gameState.isHost) {
+            updatePlayerTurnTimer(newTime)
+          }
+
           if (newTime === 0) {
             clearInterval(interval)
-            // Auto-advance to next player when timer runs out
-            setTimeout(() => {
-              nextPlayerTurn()
-            }, 500)
+            // Only host can advance to next player in online mode
+            if (!isOnlineMode || gameState.isHost) {
+              setTimeout(() => {
+                nextPlayerTurn()
+              }, 500)
+            }
           }
           return newTime
         })
@@ -37,7 +44,7 @@ export default function ActiveGameRound() {
 
       return () => clearInterval(interval)
     }
-  }, [gameState.roundDuration, gameState.phase, gameState.currentPlayerIndex, currentPlayer, updatePlayerTurnTimer, nextPlayerTurn])
+  }, [gameState.roundDuration, gameState.phase, gameState.currentPlayerIndex, currentPlayer, updatePlayerTurnTimer, nextPlayerTurn, isOnlineMode, gameState.isHost])
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60)

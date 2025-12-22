@@ -1221,8 +1221,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     gameState.roomId,
     gameState.phase,
     gameState.currentPlayerIndex,
-    gameState.playerTurnTimer,
     gameState.eliminatedPlayerId,
+    // Don't include playerTurnTimer - we don't need to sync every second!
     // Don't include syncStateToSupabase or players to avoid infinite loop
   ])
 

@@ -3,9 +3,14 @@
 import { useState, useEffect } from 'react'
 import { useGame } from '@/contexts/GameContext'
 import { supabase } from '@/lib/supabaseClient'
+import { useOnlineSyncWithStateUpdate } from '@/hooks/useOnlineSync'
 
 export default function VotingScreen() {
   const { gameState, vote, eliminatePlayer, continueAfterTie, resetToRevealRoles, submitVoteOnline } = useGame()
+
+  // Subscribe to state changes in online mode
+  useOnlineSyncWithStateUpdate()
+
   const [currentVoterIndex, setCurrentVoterIndex] = useState(0)
   const [votingComplete, setVotingComplete] = useState(false)
   const [showVoteResults, setShowVoteResults] = useState(false)
