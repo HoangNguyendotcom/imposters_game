@@ -1,13 +1,35 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useGame } from '@/contexts/GameContext'
 
 export default function HistoryButton() {
-  const { playerHistory, resetHistory, removePlayerFromHistory } = useGame()
+  const { gameState, playerHistory, resetHistory, removePlayerFromHistory, loadRoomGameHistory } = useGame()
   const [isOpen, setIsOpen] = useState(false)
+  const [roomGameHistory, setRoomGameHistory] = useState<any[]>([])
+  const [loading, setLoading] = useState(false)
 
-  const hasHistory = playerHistory.length > 0
+  const isOnlineMode = gameState.mode === 'online'
+  const hasRoomId = gameState.roomId !== null
+
+  // Load room-specific game history when opening in online mode
+  useEffect(() => {
+    if (isOpen && isOnlineMode && hasRoomId) {
+      setLoading(true)
+      setRoomGameHistory([])
+      loadRoomGameHistory().then((history) => {
+        setRoomGameHistory(history)
+        setLoading(false)
+      })
+    } else if (!isOpen) {
+      // Reset when closed
+      setRoomGameHistory([])
+      setLoading(false)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, isOnlineMode, hasRoomId])
+
+  const hasHistory = isOnlineMode ? roomGameHistory.length > 0 : playerHistory.length > 0
 
   const sortedHistory = useMemo(
     () =>
@@ -27,9 +49,11 @@ export default function HistoryButton() {
 
       {isOpen && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/80 backdrop-blur-md px-4">
-          <div className="bg-slate-950 border border-white/20 rounded-2xl shadow-2xl max-w-3xl w-full max-h-[80vh] flex flex-col">
+          <div className="bg-slate-950 border border-white/20 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[80vh] flex flex-col">
             <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-slate-900/80">
-              <h2 className="text-lg font-semibold text-white">Player History</h2>
+              <h2 className="text-lg font-semibold text-white">
+                {isOnlineMode ? 'Game History (This Room)' : 'Player History'}
+              </h2>
               <button
                 onClick={() => setIsOpen(false)}
                 className="text-white/60 hover:text-white text-sm px-2 py-1 rounded-full hover:bg-white/10"
@@ -40,23 +64,94 @@ export default function HistoryButton() {
 
             <div className="px-6 py-3 border-b border-white/10 flex items-center justify-between gap-3 bg-slate-900/60">
               <p className="text-xs text-white/70">
-                Lưu điểm số và số lần chiến thắng của từng người chơi theo vai trò (Civilian / Imposter / Spy).
+                {isOnlineMode
+                  ? 'Lịch sử các game đã chơi trong phòng này.'
+                  : 'Lưu điểm số và số lần chiến thắng của từng người chơi theo vai trò (Civilian / Imposter / Spy).'}
               </p>
-              <button
-                type="button"
-                onClick={resetHistory}
-                disabled={!hasHistory}
-                className="text-xs px-3 py-1 rounded-full border border-red-400/80 bg-red-600/10 text-red-200 hover:bg-red-600/30 disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                Reset all
-              </button>
+              {!isOnlineMode && (
+                <button
+                  type="button"
+                  onClick={resetHistory}
+                  disabled={!hasHistory}
+                  className="text-xs px-3 py-1 rounded-full border border-red-400/80 bg-red-600/10 text-red-200 hover:bg-red-600/30 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Reset all
+                </button>
+              )}
             </div>
 
             <div className="px-6 py-4 overflow-y-auto flex-1 bg-slate-950">
-              {!hasHistory ? (
+              {loading ? (
+                <p className="text-sm text-white/60 text-center">Loading...</p>
+              ) : !hasHistory ? (
                 <p className="text-sm text-white/60 text-center">
-                  Chưa có dữ liệu nào. Hãy chơi vài ván để bắt đầu ghi lịch sử!
+                  {isOnlineMode
+                    ? 'Chưa có game nào trong phòng này. Hãy chơi một ván để bắt đầu!'
+                    : 'Chưa có dữ liệu nào. Hãy chơi vài ván để bắt đầu ghi lịch sử!'}
                 </p>
+              ) : isOnlineMode ? (
+                <div className="space-y-4">
+                  {roomGameHistory.map((game, index) => (
+                    <div key={game.id} className="bg-slate-900/90 border border-slate-700/80 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-white font-semibold">
+                          Game #{game.game_number}
+                        </h3>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-white/60">
+                            {new Date(game.created_at).toLocaleDateString('vi-VN', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </span>
+                          <span className={`text-xs px-2 py-1 rounded ${
+                            game.winner === 'civilians' ? 'bg-blue-500/20 text-blue-300' :
+                            game.winner === 'spy' ? 'bg-purple-500/20 text-purple-300' :
+                            'bg-red-500/20 text-red-300'
+                          }`}>
+                            {game.winner === 'civilians' ? 'Civilians Win' :
+                             game.winner === 'spy' ? 'Spy Wins' :
+                             'Imposters Win'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Words reveal */}
+                      <div className="mb-3 text-xs text-white/60 space-x-2">
+                        <span>Civilian: <span className="text-blue-300">{game.civilian_word}</span></span>
+                        {game.spy_word && (
+                          <span>| Spy: <span className="text-purple-300">{game.spy_word}</span></span>
+                        )}
+                        <span>| Hint: <span className="text-red-300">{game.imposter_hint}</span></span>
+                      </div>
+
+                      {/* Player results */}
+                      <div className="space-y-1">
+                        {game.player_results.map((player: any, playerIndex: number) => (
+                          <div key={playerIndex} className="flex items-center justify-between bg-slate-800/50 rounded px-3 py-2">
+                            <div className="flex items-center gap-2">
+                              <span className="text-white/90">{player.playerName}</span>
+                              <span className={`text-[10px] px-1.5 py-0.5 rounded ${
+                                player.role === 'imposter' ? 'bg-red-500/30 text-red-300' :
+                                player.role === 'spy' ? 'bg-purple-500/30 text-purple-300' :
+                                'bg-blue-500/30 text-blue-300'
+                              }`}>
+                                {player.role}
+                              </span>
+                              {!player.survived && (
+                                <span className="text-[10px] text-white/40">(eliminated)</span>
+                              )}
+                            </div>
+                            <span className="text-yellow-300 font-bold">{player.totalPoints} pts</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="min-w-full text-sm text-left text-white/80 border-separate border-spacing-y-1">

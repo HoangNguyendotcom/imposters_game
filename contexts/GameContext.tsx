@@ -1043,13 +1043,18 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (gameState.phase !== 'results' || gameState.historyRecorded) return
 
+    // Skip auto-record for online mode - history is saved to Supabase in ResultsScreen
+    // after vote history is fetched for accurate scores
+    if (gameState.mode === 'online') {
+      console.log('[auto-record] Skipping auto-record for online mode - history saved to Supabase')
+      setGameState((prev) => ({ ...prev, historyRecorded: true }))
+      return
+    }
+
     const { winner } = calculateResults()
     const pointsBreakdown = calculatePoints()
 
-    // Note: For online mode, saveGameResultToSupabase is called from ResultsScreen
-    // after fetchVoteHistoryFromSupabase completes to ensure accurate scores
-
-    // Always update local history (for offline mode or as a backup)
+    // Update local history (for offline mode only)
     const updatedHistory = [...playerHistory]
 
     pointsBreakdown.forEach((playerPoints) => {
