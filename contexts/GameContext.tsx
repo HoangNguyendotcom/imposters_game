@@ -138,6 +138,8 @@ interface GameContextType {
   fetchMyRole: () => Promise<void>
   submitVoteOnline: (targetId: string) => Promise<void>
   fetchVoteHistoryFromSupabase: () => Promise<void>
+  saveGameResultToSupabase: (pointsBreakdown: PlayerPointsBreakdown[], winner: 'civilians' | 'imposters' | 'spy') => Promise<void>
+  updateLocalScoresAfterCalculation: (pointsBreakdown: PlayerPointsBreakdown[]) => void
   loadRoomGameHistory: () => Promise<any[]>
   initializeClientId: () => void
 }
@@ -1034,11 +1036,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     const { winner } = calculateResults()
     const pointsBreakdown = calculatePoints()
 
-    // Save to Supabase in online mode (host only)
-    if (gameState.mode === 'online' && gameState.isHost) {
-      console.log('[Auto-record history] Saving game result to Supabase for online mode')
-      saveGameResultToSupabase(pointsBreakdown, winner)
-    }
+    // Note: For online mode, saveGameResultToSupabase is called from ResultsScreen
+    // after fetchVoteHistoryFromSupabase completes to ensure accurate scores
 
     // Always update local history (for offline mode or as a backup)
     const updatedHistory = [...playerHistory]
@@ -1404,6 +1403,23 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     }
   }, [gameState.mode, gameState.isHost, gameState.roomId, gameState.civilianWord, gameState.spyWord, gameState.imposterHint])
 
+  // Update local gameState with accurate scores after calculating with complete vote history
+  const updateLocalScoresAfterCalculation = useCallback((pointsBreakdown: PlayerPointsBreakdown[]) => {
+    console.log('[updateLocalScoresAfterCalculation] Updating local scores with calculated values')
+
+    // Note: We don't update player.votes or other game state here
+    // We just store the calculated points for display purposes
+    // The actual score calculation is done in calculatePoints() using the vote history
+
+    // The pointsBreakdown already contains all the information we need
+    // and calculatePoints() will use the updated voteHistory to calculate correctly
+    // So we don't actually need to modify gameState here
+
+    console.log('[updateLocalScoresAfterCalculation] Points breakdown ready:',
+      pointsBreakdown.map(p => ({ name: p.playerName, points: p.totalPoints }))
+    )
+  }, [])
+
   // Load game results from Supabase for current room
   const loadRoomGameHistory = useCallback(async () => {
     if (!gameState.roomId) {
@@ -1502,6 +1518,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         fetchMyRole,
         submitVoteOnline,
         fetchVoteHistoryFromSupabase,
+        saveGameResultToSupabase,
+        updateLocalScoresAfterCalculation,
         loadRoomGameHistory,
         initializeClientId,
       }}

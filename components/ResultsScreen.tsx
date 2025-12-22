@@ -1,11 +1,13 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useGame } from '@/contexts/GameContext'
 import { useOnlineSyncWithStateUpdate } from '@/hooks/useOnlineSync'
 
 export default function ResultsScreen() {
-  const { gameState, resetGame, playAgain, calculateResults, calculatePoints, fetchVoteHistoryFromSupabase } = useGame()
+  const { gameState, resetGame, playAgain, calculateResults, calculatePoints, fetchVoteHistoryFromSupabase, saveGameResultToSupabase, loadRoomGameHistory } = useGame()
+  const [voteHistoryLoaded, setVoteHistoryLoaded] = useState(false)
+  const [resultSaved, setResultSaved] = useState(false)
 
   // Subscribe to state changes in online mode
   useOnlineSyncWithStateUpdate()
@@ -15,11 +17,41 @@ export default function ResultsScreen() {
 
   // Fetch vote history from Supabase when host reaches results (for accurate scoring)
   useEffect(() => {
-    if (isOnlineMode && isHost) {
+    if (isOnlineMode && isHost && !voteHistoryLoaded) {
       console.log('[ResultsScreen] Host fetching vote history from Supabase for scoring...')
-      fetchVoteHistoryFromSupabase()
+      fetchVoteHistoryFromSupabase().then(() => {
+        console.log('[ResultsScreen] Vote history loaded successfully')
+        setVoteHistoryLoaded(true)
+      })
     }
-  }, [isOnlineMode, isHost, fetchVoteHistoryFromSupabase])
+  }, [isOnlineMode, isHost, voteHistoryLoaded, fetchVoteHistoryFromSupabase])
+
+  // Save game result to Supabase AFTER vote history is loaded (for accurate scores)
+  useEffect(() => {
+    if (isOnlineMode && isHost && voteHistoryLoaded && !resultSaved) {
+      console.log('[ResultsScreen] Vote history loaded, now calculating and saving game result...')
+      const { winner } = calculateResults()
+      const pointsBreakdown = calculatePoints()
+
+      console.log('[ResultsScreen] Calculated points with complete vote history:', {
+        voteHistoryLength: gameState.voteHistory.length,
+        pointsBreakdown: pointsBreakdown.map(p => ({ name: p.playerName, points: p.totalPoints }))
+      })
+
+      saveGameResultToSupabase(pointsBreakdown, winner).then(() => {
+        console.log('[ResultsScreen] Game result saved to Supabase')
+        setResultSaved(true)
+      })
+    }
+  }, [isOnlineMode, isHost, voteHistoryLoaded, resultSaved, calculateResults, calculatePoints, saveGameResultToSupabase, gameState.voteHistory.length])
+
+  // Reset flags when leaving results screen (phase changes)
+  useEffect(() => {
+    if (gameState.phase !== 'results') {
+      setVoteHistoryLoaded(false)
+      setResultSaved(false)
+    }
+  }, [gameState.phase])
 
   const { winner, votedOutPlayer } = calculateResults()
   const imposters = gameState.players.filter((p) => p.role === 'imposter')
