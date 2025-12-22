@@ -17,11 +17,11 @@ export default function RoleAssignmentScreen() {
 
   // Fetch role for online mode
   useEffect(() => {
-    if (isOnlineMode && !gameState.myRole && gameState.roomId) {
+    if (isOnlineMode && !gameState.myRole && gameState.roomId && gameState.myClientId) {
       setIsLoadingRole(true)
       fetchMyRole().finally(() => setIsLoadingRole(false))
     }
-  }, [isOnlineMode, gameState.myRole, gameState.roomId, fetchMyRole])
+  }, [isOnlineMode, gameState.myRole, gameState.roomId, gameState.myClientId, fetchMyRole])
 
   useEffect(() => {
     // Reset reveal state when moving to next player
