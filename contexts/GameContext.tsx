@@ -1173,13 +1173,14 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
             imposterHint: prev.imposterHint,
           })
 
-          // If phase is changing to reveal-roles and currentRound is 1, this is a new game
-          // Clear myRole and myWord so fetchMyRole will be triggered again
-          const isNewGame = data.phase === 'reveal-roles' && syncedState.currentRound === 1
-          const shouldClearRole = isNewGame && prev.myRole !== null
+          // Only clear myRole/myWord when TRANSITIONING to reveal-roles (not every sync during reveal-roles)
+          // Check if phase is CHANGING from something else to reveal-roles AND it's round 1
+          const isPhaseChanging = prev.phase !== data.phase
+          const isTransitioningToRevealRoles = isPhaseChanging && data.phase === 'reveal-roles' && syncedState.currentRound === 1
+          const shouldClearRole = isTransitioningToRevealRoles && prev.myRole !== null
 
           if (shouldClearRole) {
-            console.log('[syncStateFromSupabase] Clearing myRole and myWord for new game')
+            console.log('[syncStateFromSupabase] Phase transitioning to reveal-roles - Clearing myRole and myWord for new game')
           }
 
           return {
@@ -1211,7 +1212,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
             }) ?? prev.players,
             voteHistory: syncedState.voteHistory ?? prev.voteHistory,
             eliminationHistory: syncedState.eliminationHistory ?? prev.eliminationHistory,
-            // Clear myRole and myWord when starting a new game (reveal-roles + round 1)
+            // Clear myRole and myWord ONLY when transitioning to reveal-roles (not on every sync)
             myRole: shouldClearRole ? null : prev.myRole,
             myWord: shouldClearRole ? null : prev.myWord,
           }
