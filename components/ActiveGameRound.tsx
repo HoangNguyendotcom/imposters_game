@@ -14,6 +14,9 @@ export default function ActiveGameRound() {
   const isOnlineMode = gameState.mode === 'online'
   const currentPlayer = gameState.players[gameState.currentPlayerIndex]
 
+  // Check if current player is eliminated (online mode only)
+  const isEliminated = isOnlineMode && gameState.myPlayerId && !gameState.players.some(p => p.id === gameState.myPlayerId)
+
   useEffect(() => {
     setPlayerTimer(gameState.playerTurnTimer)
   }, [gameState.playerTurnTimer, gameState.currentPlayerIndex])
@@ -44,7 +47,8 @@ export default function ActiveGameRound() {
 
       return () => clearInterval(interval)
     }
-  }, [gameState.roundDuration, gameState.phase, gameState.currentPlayerIndex, currentPlayer, updatePlayerTurnTimer, nextPlayerTurn, isOnlineMode, gameState.isHost])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameState.roundDuration, gameState.phase, gameState.currentPlayerIndex, currentPlayer, isOnlineMode, gameState.isHost])
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60)
@@ -54,6 +58,53 @@ export default function ActiveGameRound() {
 
   if (!currentPlayer) {
     return null
+  }
+
+  // Eliminated players see a spectator screen (online mode only)
+  if (isEliminated) {
+    const progress = ((gameState.currentPlayerIndex + 1) / gameState.players.length) * 100
+
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl p-8 md:p-12 max-w-md w-full border border-white/20">
+          <div className="text-center mb-6">
+            <div className="text-6xl mb-4">👻</div>
+            <h1 className="text-3xl font-bold text-white mb-4">
+              You've been eliminated
+            </h1>
+            <p className="text-white/70 text-lg">
+              Spectating the game...
+            </p>
+          </div>
+
+          <div className="mb-6">
+            <div className="flex justify-between text-white/80 text-sm mb-2">
+              <span>Player {gameState.currentPlayerIndex + 1} of {gameState.players.length}</span>
+              <span>{Math.round(progress)}%</span>
+            </div>
+            <div className="w-full bg-white/20 rounded-full h-2">
+              <div
+                className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full transition-all duration-300"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          </div>
+
+          <div className="bg-white/5 rounded-lg p-6 mb-4 border border-white/10">
+            <p className="text-white/80 text-center text-lg mb-2">
+              <span className="font-bold">{currentPlayer.name}</span>'s turn
+            </p>
+            {gameState.roundDuration > 0 && (
+              <div className="text-center">
+                <div className="text-4xl font-bold text-white/70">
+                  {formatTime(playerTimer)}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    )
   }
 
   const progress = ((gameState.currentPlayerIndex + 1) / gameState.players.length) * 100

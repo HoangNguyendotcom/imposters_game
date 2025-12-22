@@ -26,6 +26,9 @@ export default function VotingScreen() {
   const currentVoter = gameState.players[currentVoterIndex]
   const hasVoted = currentVoter?.votedFor !== undefined
 
+  // Check if current player is eliminated (online mode only)
+  const isEliminated = isOnlineMode && gameState.myPlayerId && !gameState.players.some(p => p.id === gameState.myPlayerId)
+
   // Subscribe to votes in online mode
   useEffect(() => {
     if (!isOnlineMode || !gameState.roomId) return
@@ -178,6 +181,30 @@ export default function VotingScreen() {
         eliminatePlayer(mostVoted.id)
       }
     }
+  }
+
+  // Eliminated players see a waiting screen (online mode only)
+  if (isEliminated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl p-8 md:p-12 max-w-md w-full border border-white/20">
+          <div className="text-center">
+            <div className="text-6xl mb-4">👻</div>
+            <h1 className="text-3xl font-bold text-white mb-4">
+              You've been eliminated
+            </h1>
+            <p className="text-white/70 text-lg mb-6">
+              Waiting for other players to vote...
+            </p>
+            <div className="bg-white/5 rounded-lg p-4 border border-white/10">
+              <p className="text-white/60 text-sm">
+                {voteCount} / {gameState.players.length} players have voted
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   // Show vote results first
