@@ -1047,26 +1047,6 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     initializeClientId()
   }, [initializeClientId])
 
-  // Auto-sync state to Supabase when host makes changes
-  useEffect(() => {
-    if (gameState.mode === 'online' && gameState.isHost && gameState.roomId) {
-      // Don't sync during setup or lobby
-      if (gameState.phase === 'setup' || gameState.phase === 'online-lobby') return
-
-      syncStateToSupabase()
-    }
-  }, [
-    gameState.mode,
-    gameState.isHost,
-    gameState.roomId,
-    gameState.phase,
-    gameState.currentPlayerIndex,
-    gameState.playerTurnTimer,
-    gameState.eliminatedPlayerId,
-    gameState.players,
-    syncStateToSupabase,
-  ])
-
   // Sync game state to Supabase (host only)
   const syncStateToSupabase = useCallback(async () => {
     if (!gameState.roomId || !gameState.isHost) return
@@ -1212,6 +1192,26 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       console.error('Error submitting vote:', error)
     }
   }, [gameState.roomId, gameState.myClientId, gameState.myPlayerId, gameState.currentRound])
+
+  // Auto-sync state to Supabase when host makes changes
+  useEffect(() => {
+    if (gameState.mode === 'online' && gameState.isHost && gameState.roomId) {
+      // Don't sync during setup or lobby
+      if (gameState.phase === 'setup' || gameState.phase === 'online-lobby') return
+
+      syncStateToSupabase()
+    }
+  }, [
+    gameState.mode,
+    gameState.isHost,
+    gameState.roomId,
+    gameState.phase,
+    gameState.currentPlayerIndex,
+    gameState.playerTurnTimer,
+    gameState.eliminatedPlayerId,
+    gameState.players,
+    syncStateToSupabase,
+  ])
 
   return (
     <GameContext.Provider
