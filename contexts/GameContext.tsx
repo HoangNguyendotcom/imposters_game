@@ -138,6 +138,7 @@ interface GameContextType {
   fetchMyRole: () => Promise<void>
   submitVoteOnline: (targetId: string) => Promise<void>
   fetchVoteHistoryFromSupabase: () => Promise<void>
+  loadRoomGameHistory: () => Promise<any[]>
   initializeClientId: () => void
 }
 
@@ -194,6 +195,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   // Load history on mount (kept across page refreshes)
   useEffect(() => {
     if (typeof window === 'undefined') return
+
+    // Load local history (offline mode only)
     try {
       const stored = localStorage.getItem(HISTORY_STORAGE_KEY)
       if (stored) {
@@ -209,6 +212,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     } catch {
       // ignore malformed history
     }
+    // Online mode: Room-specific game history is loaded via loadRoomGameHistory()
   }, [])
 
   // Save to localStorage whenever gameState changes (but only during active session)
@@ -1030,6 +1034,13 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     const { winner } = calculateResults()
     const pointsBreakdown = calculatePoints()
 
+    // Save to Supabase in online mode (host only)
+    if (gameState.mode === 'online' && gameState.isHost) {
+      console.log('[Auto-record history] Saving game result to Supabase for online mode')
+      saveGameResultToSupabase(pointsBreakdown, winner)
+    }
+
+    // Always update local history (for offline mode or as a backup)
     const updatedHistory = [...playerHistory]
 
     pointsBreakdown.forEach((playerPoints) => {
@@ -1067,7 +1078,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
     persistHistory(updatedHistory)
     setGameState((prev) => ({ ...prev, historyRecorded: true }))
-  }, [gameState.phase, gameState.historyRecorded, calculateResults, calculatePoints, playerHistory, persistHistory])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameState.phase, gameState.historyRecorded, calculateResults, calculatePoints, playerHistory, persistHistory, gameState.mode, gameState.isHost])
 
   // ====================
   // Online Sync Functions
@@ -1340,6 +1352,92 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     }
   }, [gameState.roomId, gameState.isHost, gameState.allPlayersSnapshot])
 
+  // Save game result to Supabase (online mode only, host only to avoid duplicates)
+  const saveGameResultToSupabase = useCallback(async (pointsBreakdown: PlayerPointsBreakdown[], winner: 'civilians' | 'imposters' | 'spy') => {
+    if (gameState.mode !== 'online' || !gameState.isHost || !gameState.roomId) {
+      console.log('[saveGameResultToSupabase] Skipping - not online mode, not host, or no roomId')
+      return
+    }
+
+    console.log('[saveGameResultToSupabase] Saving game result for room:', gameState.roomId)
+
+    try {
+      // Get the current game number for this room
+      const { data: existingResults } = await supabase
+        .from('game_results')
+        .select('game_number')
+        .eq('room_id', gameState.roomId)
+        .order('game_number', { ascending: false })
+        .limit(1)
+
+      const gameNumber = existingResults && existingResults.length > 0 ? existingResults[0].game_number + 1 : 1
+
+      // Prepare player results
+      const playerResults = pointsBreakdown.map((player) => ({
+        playerId: player.playerId,
+        playerName: player.playerName,
+        role: player.role,
+        totalPoints: player.totalPoints,
+        survived: player.survived,
+      }))
+
+      // Insert the game result
+      const { error } = await supabase
+        .from('game_results')
+        .insert({
+          room_id: gameState.roomId,
+          game_number: gameNumber,
+          winner: winner,
+          civilian_word: gameState.civilianWord,
+          spy_word: gameState.spyWord,
+          imposter_hint: gameState.imposterHint,
+          player_results: playerResults,
+        })
+
+      if (error) {
+        console.error('[saveGameResultToSupabase] Error saving game result:', error)
+      } else {
+        console.log('[saveGameResultToSupabase] Game result saved successfully as game #', gameNumber)
+      }
+    } catch (error) {
+      console.error('[saveGameResultToSupabase] Error:', error)
+    }
+  }, [gameState.mode, gameState.isHost, gameState.roomId, gameState.civilianWord, gameState.spyWord, gameState.imposterHint])
+
+  // Load game results from Supabase for current room
+  const loadRoomGameHistory = useCallback(async () => {
+    if (!gameState.roomId) {
+      console.log('[loadRoomGameHistory] No roomId, skipping')
+      return []
+    }
+
+    console.log('[loadRoomGameHistory] Loading game history for room:', gameState.roomId)
+
+    try {
+      const { data, error } = await supabase
+        .from('game_results')
+        .select('*')
+        .eq('room_id', gameState.roomId)
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('[loadRoomGameHistory] Error loading game results:', error)
+        return []
+      }
+
+      if (!data || data.length === 0) {
+        console.log('[loadRoomGameHistory] No game history found for this room')
+        return []
+      }
+
+      console.log('[loadRoomGameHistory] Loaded', data.length, 'game results')
+      return data
+    } catch (error) {
+      console.error('[loadRoomGameHistory] Error:', error)
+      return []
+    }
+  }, [gameState.roomId])
+
   // Auto-sync state to Supabase when host makes changes
   useEffect(() => {
     if (gameState.mode === 'online' && gameState.isHost && gameState.roomId) {
@@ -1404,6 +1502,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         fetchMyRole,
         submitVoteOnline,
         fetchVoteHistoryFromSupabase,
+        loadRoomGameHistory,
         initializeClientId,
       }}
     >
