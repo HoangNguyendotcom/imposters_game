@@ -79,7 +79,7 @@ export default function OnlineLobbyScreen() {
 
         // Check if current player became the host
         const myPlayer = data.find((p) => p.id === gameState.myPlayerId)
-        if (myPlayer && myPlayer.is_host && !gameState.isHost) {
+        if (myPlayer && myPlayer.is_host && !gameState.isHost && gameState.roomId && gameState.roomCode && gameState.myName) {
           console.log('[OnlineLobbyScreen] You have been promoted to host!')
           setOnlineInfo({
             roomId: gameState.roomId,
