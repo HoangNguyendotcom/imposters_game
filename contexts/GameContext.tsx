@@ -360,6 +360,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       civilianWord = randomAssignment ? wordPair.word1 : wordPair.word2
       spyWord = randomAssignment ? wordPair.word2 : wordPair.word1
       imposterHint = wordPair.hint
+      console.log('[assignRoles] Generated NEW words (spy mode):', { civilianWord, spyWord, imposterHint })
 
       // Step 2: Assign roles (imposters, spies, civilians)
       // First N are imposters, next spyCount are spies, rest are civilians
@@ -423,6 +424,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       const wordPair = getRandomWordPair()
       civilianWord = wordPair.word1 // Civilians get word1
       imposterHint = wordPair.hint // Imposters get hint
+      console.log('[assignRoles] Generated NEW words (no-spy mode):', { civilianWord, imposterHint })
       
       // Step 2: Assign first N players as imposters, rest as civilians
       const playersWithRoles = shuffled.map((player, index) => {
@@ -473,6 +475,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       imposterHint: string | null
     ) {
       try {
+        console.log('[writeRolesToSupabase] Cleaning up old roles and writing new ones for room:', roomId)
         // Delete existing roles for this room
         await supabase.from('player_roles').delete().eq('room_id', roomId)
 
@@ -531,6 +534,14 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
           voteHistory: [],
           eliminationHistory: [],
         }
+
+        console.log('[writeRolesToSupabase] Syncing state with NEW words and EMPTY vote history:', {
+          civilianWord,
+          spyWord,
+          imposterHint,
+          voteHistoryLength: 0,
+          eliminationHistoryLength: 0
+        })
 
         await supabase
           .from('room_state')
@@ -869,10 +880,21 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     setGameState((prev) => ({ ...prev, timer: seconds }))
   }
 
-  const resetGame = () => {
+  const resetGame = useCallback(() => {
+    // In online mode, clean up Supabase data before resetting
+    if (gameState.mode === 'online' && gameState.roomId) {
+      // Delete player roles and votes for this room
+      supabase.from('player_roles').delete().eq('room_id', gameState.roomId).then(() => {
+        console.log('[resetGame] Cleaned up player_roles')
+      })
+      supabase.from('votes').delete().eq('room_id', gameState.roomId).then(() => {
+        console.log('[resetGame] Cleaned up votes')
+      })
+    }
+
     setGameState(defaultGameState)
     localStorage.removeItem(STORAGE_KEY)
-  }
+  }, [gameState.mode, gameState.roomId])
 
   const continueAfterTie = () => {
     // Reset votes and continue playing after a tie
@@ -891,16 +913,23 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   const resetToRevealRoles = () => {
     // Restore original players and reassign roles, then go to reveal-roles phase
-    const playersToRestore = gameState.originalPlayers.length > 0 
-      ? gameState.originalPlayers 
+    const playersToRestore = gameState.originalPlayers.length > 0
+      ? gameState.originalPlayers
       : gameState.players.map((p) => ({ id: p.id, name: p.name }))
-    
-    // Reassign roles with the restored players (this will set phase to 'reveal-roles' and reset all state)
-    assignRoles(playersToRestore)
+
+    // Clean up old votes before reassigning (player_roles is cleaned in assignRoles)
+    if (gameState.mode === 'online' && gameState.roomId && gameState.isHost) {
+      supabase.from('votes').delete().eq('room_id', gameState.roomId).then(() => {
+        console.log('[resetToRevealRoles] Cleaned up old votes')
+      })
+    }
+
+    // Reassign roles with the restored players - this generates NEW words and resets vote/elimination history
+    assignRoles(playersToRestore, gameState.imposterCount, gameState.spyCount)
   }
 
   const playAgain = () => {
-    // Use resetToRevealRoles to go directly to reveal-roles
+    // Use resetToRevealRoles to go directly to reveal-roles with new roles/words
     resetToRevealRoles()
   }
 
