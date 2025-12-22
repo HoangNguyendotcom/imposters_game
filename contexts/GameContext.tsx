@@ -121,7 +121,7 @@ interface GameContextType {
   processElimination: () => void
   checkGameEnd: (eliminatedPlayerId?: string) => boolean
   calculateResults: () => { winner: 'civilians' | 'imposters' | 'spy'; votedOutPlayer: Player | null }
-  calculatePoints: () => PlayerPointsBreakdown[]
+  calculatePoints: (voteHistoryOverride?: VoteRecord[]) => PlayerPointsBreakdown[]
   resetGame: () => void
   playAgain: () => void
   resetToRevealRoles: () => void
@@ -137,7 +137,8 @@ interface GameContextType {
   syncStateFromSupabase: () => Promise<void>
   fetchMyRole: () => Promise<void>
   submitVoteOnline: (targetId: string) => Promise<void>
-  fetchVoteHistoryFromSupabase: () => Promise<void>
+  fetchVoteHistoryFromSupabase: () => Promise<VoteRecord[]>
+  clearVotesFromSupabase: () => Promise<void>
   saveGameResultToSupabase: (pointsBreakdown: PlayerPointsBreakdown[], winner: 'civilians' | 'imposters' | 'spy') => Promise<void>
   updateLocalScoresAfterCalculation: (pointsBreakdown: PlayerPointsBreakdown[]) => void
   loadRoomGameHistory: () => Promise<any[]>
@@ -346,6 +347,12 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     const playerCount = players.length
     const finalImposterCount = imposterCount ?? gameState.imposterCount
     const finalSpyCount = spyCount ?? gameState.spyCount
+
+    // Clear old votes from Supabase before starting a new game (online mode only)
+    if (gameState.mode === 'online' && gameState.isHost && gameState.roomId) {
+      console.log('[assignRoles] Clearing old votes before starting new game')
+      await clearVotesFromSupabase()
+    }
 
     // Store original players for playAgain
     const originalPlayers = players.map((p) => ({
@@ -785,9 +792,12 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     return { winner: 'civilians', votedOutPlayer: null }
   }, [gameState])
 
-  const calculatePoints = useCallback((): PlayerPointsBreakdown[] => {
+  const calculatePoints = useCallback((voteHistoryOverride?: VoteRecord[]): PlayerPointsBreakdown[] => {
     const { winner } = calculateResults()
     const pointsBreakdown: PlayerPointsBreakdown[] = []
+
+    // Use provided voteHistory or fall back to gameState.voteHistory
+    const voteHistory = voteHistoryOverride || gameState.voteHistory
 
     // Use allPlayersSnapshot which contains all original players with their roles
     gameState.allPlayersSnapshot.forEach((player) => {
@@ -820,7 +830,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         }
 
         // Calculate voting points for ALL votes (not just eliminations)
-        gameState.voteHistory
+        voteHistory
           .filter((v) => v.voterId === player.id)
           .forEach((vote) => {
             if (vote.targetRole === 'imposter') {
@@ -844,7 +854,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         }
 
         // Voting bonus for voting for civilians (ALWAYS awarded)
-        gameState.voteHistory
+        voteHistory
           .filter((v) => v.voterId === player.id && v.targetRole === 'civilian')
           .forEach((vote) => {
             votingPoints += 20
@@ -866,7 +876,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         }
 
         // Voting bonus for voting for civilians
-        gameState.voteHistory
+        voteHistory
           .filter((v) => v.voterId === player.id && v.targetRole === 'civilian')
           .forEach((vote) => {
             votingPoints += 20
@@ -1296,10 +1306,10 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   }, [gameState.roomId, gameState.myClientId, gameState.myPlayerId, gameState.currentRound])
 
   // Fetch all votes from Supabase and populate voteHistory (host only, for scoring)
-  const fetchVoteHistoryFromSupabase = useCallback(async () => {
+  const fetchVoteHistoryFromSupabase = useCallback(async (): Promise<VoteRecord[]> => {
     if (!gameState.roomId || !gameState.isHost) {
       console.log('[fetchVoteHistoryFromSupabase] Skipping - not host or no roomId')
-      return
+      return []
     }
 
     console.log('[fetchVoteHistoryFromSupabase] Fetching all votes for room:', gameState.roomId)
@@ -1314,12 +1324,12 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
       if (error) {
         console.error('[fetchVoteHistoryFromSupabase] Error fetching votes:', error)
-        return
+        return []
       }
 
       if (!votes || votes.length === 0) {
         console.log('[fetchVoteHistoryFromSupabase] No votes found')
-        return
+        return []
       }
 
       console.log('[fetchVoteHistoryFromSupabase] Found votes:', votes.length)
@@ -1346,10 +1356,46 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         ...prev,
         voteHistory: voteRecords,
       }))
+
+      // Also return the vote records for immediate use
+      return voteRecords
     } catch (error) {
       console.error('[fetchVoteHistoryFromSupabase] Error:', error)
+      return []
     }
   }, [gameState.roomId, gameState.isHost, gameState.allPlayersSnapshot])
+
+  // Clear all votes from Supabase for the current room (called when starting a new game)
+  const clearVotesFromSupabase = useCallback(async () => {
+    if (!gameState.roomId || !gameState.isHost) {
+      console.log('[clearVotesFromSupabase] Skipping - not host or no roomId')
+      return
+    }
+
+    console.log('[clearVotesFromSupabase] Clearing all votes for room:', gameState.roomId)
+
+    try {
+      const { error } = await supabase
+        .from('votes')
+        .delete()
+        .eq('room_id', gameState.roomId)
+
+      if (error) {
+        console.error('[clearVotesFromSupabase] Error clearing votes:', error)
+        return
+      }
+
+      console.log('[clearVotesFromSupabase] Successfully cleared all votes')
+
+      // Also clear voteHistory in local state
+      setGameState((prev) => ({
+        ...prev,
+        voteHistory: [],
+      }))
+    } catch (error) {
+      console.error('[clearVotesFromSupabase] Error:', error)
+    }
+  }, [gameState.roomId, gameState.isHost])
 
   // Save game result to Supabase (online mode only, host only to avoid duplicates)
   const saveGameResultToSupabase = useCallback(async (pointsBreakdown: PlayerPointsBreakdown[], winner: 'civilians' | 'imposters' | 'spy') => {
@@ -1518,6 +1564,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         fetchMyRole,
         submitVoteOnline,
         fetchVoteHistoryFromSupabase,
+        clearVotesFromSupabase,
         saveGameResultToSupabase,
         updateLocalScoresAfterCalculation,
         loadRoomGameHistory,

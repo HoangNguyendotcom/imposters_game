@@ -6,7 +6,6 @@ import { useOnlineSyncWithStateUpdate } from '@/hooks/useOnlineSync'
 
 export default function ResultsScreen() {
   const { gameState, resetGame, playAgain, calculateResults, calculatePoints, fetchVoteHistoryFromSupabase, saveGameResultToSupabase, loadRoomGameHistory } = useGame()
-  const [voteHistoryLoaded, setVoteHistoryLoaded] = useState(false)
   const [resultSaved, setResultSaved] = useState(false)
 
   // Subscribe to state changes in online mode
@@ -15,40 +14,42 @@ export default function ResultsScreen() {
   const isOnlineMode = gameState.mode === 'online'
   const isHost = gameState.isHost
 
-  // Fetch vote history from Supabase when host reaches results (for accurate scoring)
+  // Fetch vote history and save result in a single sequential flow (for accurate scoring)
   useEffect(() => {
-    if (isOnlineMode && isHost && !voteHistoryLoaded) {
-      console.log('[ResultsScreen] Host fetching vote history from Supabase for scoring...')
-      fetchVoteHistoryFromSupabase().then(() => {
-        console.log('[ResultsScreen] Vote history loaded successfully')
-        setVoteHistoryLoaded(true)
-      })
-    }
-  }, [isOnlineMode, isHost, voteHistoryLoaded, fetchVoteHistoryFromSupabase])
+    if (isOnlineMode && isHost && !resultSaved) {
+      console.log('[ResultsScreen] Host starting result calculation flow...')
 
-  // Save game result to Supabase AFTER vote history is loaded (for accurate scores)
-  useEffect(() => {
-    if (isOnlineMode && isHost && voteHistoryLoaded && !resultSaved) {
-      console.log('[ResultsScreen] Vote history loaded, now calculating and saving game result...')
-      const { winner } = calculateResults()
-      const pointsBreakdown = calculatePoints()
+      // Sequential flow: fetch votes -> calculate with fetched data -> save
+      const processResults = async () => {
+        // Step 1: Fetch votes from Supabase (returns the voteRecords directly)
+        console.log('[ResultsScreen] Step 1: Fetching vote history from Supabase...')
+        const voteRecords = await fetchVoteHistoryFromSupabase()
 
-      console.log('[ResultsScreen] Calculated points with complete vote history:', {
-        voteHistoryLength: gameState.voteHistory.length,
-        pointsBreakdown: pointsBreakdown.map(p => ({ name: p.playerName, points: p.totalPoints }))
-      })
+        // Step 2: Calculate results using the fetched vote records (no need to wait for state update)
+        console.log('[ResultsScreen] Step 2: Calculating results with fetched vote history...')
+        const { winner } = calculateResults()
+        const pointsBreakdown = calculatePoints(voteRecords)
 
-      saveGameResultToSupabase(pointsBreakdown, winner).then(() => {
+        console.log('[ResultsScreen] Calculated points with complete vote history:', {
+          voteHistoryLength: voteRecords.length,
+          pointsBreakdown: pointsBreakdown.map(p => ({ name: p.playerName, points: p.totalPoints }))
+        })
+
+        // Step 3: Save to Supabase
+        console.log('[ResultsScreen] Step 3: Saving game result to Supabase...')
+        await saveGameResultToSupabase(pointsBreakdown, winner)
         console.log('[ResultsScreen] Game result saved to Supabase')
         setResultSaved(true)
-      })
-    }
-  }, [isOnlineMode, isHost, voteHistoryLoaded, resultSaved, calculateResults, calculatePoints, saveGameResultToSupabase, gameState.voteHistory.length])
+      }
 
-  // Reset flags when leaving results screen (phase changes)
+      processResults()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOnlineMode, isHost, resultSaved])
+
+  // Reset flag when leaving results screen (phase changes)
   useEffect(() => {
     if (gameState.phase !== 'results') {
-      setVoteHistoryLoaded(false)
       setResultSaved(false)
     }
   }, [gameState.phase])
