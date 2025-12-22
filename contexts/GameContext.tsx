@@ -1051,6 +1051,12 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const syncStateToSupabase = useCallback(async () => {
     if (!gameState.roomId || !gameState.isHost) return
 
+    console.log('[syncStateToSupabase] Syncing state to Supabase:', {
+      phase: gameState.phase,
+      currentPlayerIndex: gameState.currentPlayerIndex,
+      playersCount: gameState.players.length,
+    })
+
     try {
       const stateToSync = {
         phase: gameState.phase,
@@ -1089,6 +1095,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const syncStateFromSupabase = useCallback(async () => {
     if (!gameState.roomId || gameState.isHost) return
 
+    console.log('[syncStateFromSupabase] Fetching state for room:', gameState.roomId)
+
     try {
       const { data, error } = await supabase
         .from('room_state')
@@ -1097,12 +1105,17 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         .single()
 
       if (error) {
-        console.error('Error fetching room state:', error)
+        console.error('[syncStateFromSupabase] Error fetching room state:', error)
         return
       }
 
       if (data && data.state_json) {
         const syncedState = data.state_json as any
+        console.log('[syncStateFromSupabase] Synced state:', {
+          phase: data.phase,
+          currentPlayerIndex: syncedState.currentPlayerIndex,
+          playersCount: syncedState.players?.length,
+        })
 
         setGameState((prev) => ({
           ...prev,
