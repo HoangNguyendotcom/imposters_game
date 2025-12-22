@@ -1173,6 +1173,15 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
             imposterHint: prev.imposterHint,
           })
 
+          // If phase is changing to reveal-roles and currentRound is 1, this is a new game
+          // Clear myRole and myWord so fetchMyRole will be triggered again
+          const isNewGame = data.phase === 'reveal-roles' && syncedState.currentRound === 1
+          const shouldClearRole = isNewGame && prev.myRole !== null
+
+          if (shouldClearRole) {
+            console.log('[syncStateFromSupabase] Clearing myRole and myWord for new game')
+          }
+
           return {
             ...prev,
             phase: data.phase as GamePhase,
@@ -1202,6 +1211,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
             }) ?? prev.players,
             voteHistory: syncedState.voteHistory ?? prev.voteHistory,
             eliminationHistory: syncedState.eliminationHistory ?? prev.eliminationHistory,
+            // Clear myRole and myWord when starting a new game (reveal-roles + round 1)
+            myRole: shouldClearRole ? null : prev.myRole,
+            myWord: shouldClearRole ? null : prev.myWord,
           }
         })
       }
