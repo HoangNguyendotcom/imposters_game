@@ -1101,6 +1101,14 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         clientId: gameState.myClientId,
       })
 
+      // First, let's see all roles in this room for debugging
+      const { data: allRoles } = await supabase
+        .from('player_roles')
+        .select('*')
+        .eq('room_id', gameState.roomId)
+
+      console.log('All roles in room:', allRoles)
+
       const { data, error } = await supabase
         .from('player_roles')
         .select('role, word, player_id')
@@ -1110,6 +1118,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
       if (error) {
         console.error('Error from Supabase:', error)
+        console.error('Query was looking for client_id:', gameState.myClientId)
         throw error
       }
 
@@ -1123,6 +1132,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         }))
       } else {
         console.error('No role data found for this client')
+        console.error('Searched for client_id:', gameState.myClientId)
       }
     } catch (error) {
       console.error('Error fetching my role:', error)
