@@ -1263,6 +1263,10 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       // Don't sync during setup or lobby
       if (gameState.phase === 'setup' || gameState.phase === 'online-lobby') return
 
+      // Don't sync during reveal-roles phase - assignRoles already synced!
+      // This prevents overwriting the new words with stale state
+      if (gameState.phase === 'reveal-roles') return
+
       syncStateToSupabase()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
