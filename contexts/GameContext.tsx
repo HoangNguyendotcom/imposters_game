@@ -393,7 +393,12 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       
       // Step 3: Shuffle again to randomize order
       const finalPlayers = playersWithRoles.sort(() => Math.random() - 0.5)
-      
+
+      // Online mode: Write roles to player_roles table FIRST before changing phase
+      if (gameState.mode === 'online' && gameState.isHost && gameState.roomId) {
+        await writeRolesToSupabase(finalPlayers, gameState.roomId, civilianWord, spyWord, imposterHint)
+      }
+
       setGameState((prev) => ({
         ...prev,
         players: finalPlayers,
@@ -412,11 +417,6 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         eliminationHistory: [],
         allPlayersSnapshot: finalPlayers.map(p => ({ ...p })),
       }))
-
-      // Online mode: Write roles to player_roles table
-      if (gameState.mode === 'online' && gameState.isHost && gameState.roomId) {
-        await writeRolesToSupabase(finalPlayers, gameState.roomId, civilianWord, spyWord, imposterHint)
-      }
     } else {
       // No spy mode: use word pairs, imposters get hint
       const wordPair = getRandomWordPair()
@@ -438,6 +438,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       // Step 3: Shuffle again to randomize order
       const finalPlayers = playersWithRoles.sort(() => Math.random() - 0.5)
 
+      // Online mode: Write roles to player_roles table FIRST before changing phase
+      if (gameState.mode === 'online' && gameState.isHost && gameState.roomId) {
+        await writeRolesToSupabase(finalPlayers, gameState.roomId, civilianWord, null, imposterHint)
+      }
+
       setGameState((prev) => ({
         ...prev,
         players: finalPlayers,
@@ -456,11 +461,6 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         eliminationHistory: [],
         allPlayersSnapshot: finalPlayers.map(p => ({ ...p })),
       }))
-
-      // Online mode: Write roles to player_roles table
-      if (gameState.mode === 'online' && gameState.isHost && gameState.roomId) {
-        await writeRolesToSupabase(finalPlayers, gameState.roomId, civilianWord, null, imposterHint)
-      }
     }
 
     // Helper function to write roles to Supabase
@@ -501,7 +501,6 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
           }
         })
 
-        console.log('Inserting player roles:', roleInserts)
         const { error } = await supabase.from('player_roles').insert(roleInserts)
         if (error) {
           console.error('Error inserting player roles:', error)
@@ -1096,19 +1095,6 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      console.log('Fetching role for:', {
-        roomId: gameState.roomId,
-        clientId: gameState.myClientId,
-      })
-
-      // First, let's see all roles in this room for debugging
-      const { data: allRoles } = await supabase
-        .from('player_roles')
-        .select('*')
-        .eq('room_id', gameState.roomId)
-
-      console.log('All roles in room:', allRoles)
-
       const { data, error } = await supabase
         .from('player_roles')
         .select('role, word, player_id')
@@ -1117,22 +1103,17 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         .single()
 
       if (error) {
-        console.error('Error from Supabase:', error)
-        console.error('Query was looking for client_id:', gameState.myClientId)
+        console.error('Error fetching role:', error)
         throw error
       }
 
       if (data) {
-        console.log('Role fetched successfully:', data)
         setGameState((prev) => ({
           ...prev,
           myRole: data.role as PlayerRole,
           myWord: data.word,
           myPlayerId: data.player_id,
         }))
-      } else {
-        console.error('No role data found for this client')
-        console.error('Searched for client_id:', gameState.myClientId)
       }
     } catch (error) {
       console.error('Error fetching my role:', error)
