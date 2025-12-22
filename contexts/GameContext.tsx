@@ -418,6 +418,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         voteHistory: [],
         eliminationHistory: [],
         allPlayersSnapshot: finalPlayers.map(p => ({ ...p })),
+        // Clear myRole and myWord so fetchMyRole will be triggered again in online mode
+        myRole: null,
+        myWord: null,
       }))
     } else {
       // No spy mode: use word pairs, imposters get hint
@@ -463,6 +466,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         voteHistory: [],
         eliminationHistory: [],
         allPlayersSnapshot: finalPlayers.map(p => ({ ...p })),
+        // Clear myRole and myWord so fetchMyRole will be triggered again in online mode
+        myRole: null,
+        myWord: null,
       }))
     }
 
@@ -1214,6 +1220,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       return
     }
 
+    console.log('[fetchMyRole] Fetching role from Supabase for client:', gameState.myClientId)
+
     try {
       const { data, error } = await supabase
         .from('player_roles')
@@ -1228,6 +1236,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (data) {
+        console.log('[fetchMyRole] Successfully fetched role:', {
+          role: data.role,
+          word: data.word,
+          playerId: data.player_id,
+        })
         setGameState((prev) => ({
           ...prev,
           myRole: data.role as PlayerRole,
