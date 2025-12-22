@@ -2,18 +2,22 @@
 
 import { useState, useEffect } from 'react'
 import { useGame } from '@/contexts/GameContext'
+import { useOnlineSyncWithStateUpdate } from '@/hooks/useOnlineSync'
 
 export default function SetupScreen() {
-  const { 
+  const {
     gameState,
     setGameMode,
-    setPlayerCount, 
-    setRoundDuration, 
-    setPhase, 
+    setPlayerCount,
+    setRoundDuration,
+    setPhase,
     setImposterCount,
     setSpyCount,
     startGame,
   } = useGame()
+
+  // Subscribe to state changes in online mode
+  useOnlineSyncWithStateUpdate()
   const [count, setCount] = useState(gameState.playerCount || 4)
   const [imposters, setImposters] = useState(
     gameState.imposterCount || 0

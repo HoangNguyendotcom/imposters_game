@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import { useGame } from '@/contexts/GameContext'
+import { useOnlineSyncWithStateUpdate } from '@/hooks/useOnlineSync'
 
 type LobbyView = 'choose' | 'create' | 'join'
 
@@ -40,6 +41,10 @@ export default function OnlineLobbyScreen() {
     setPlayerCount,
     setPlayers,
   } = useGame()
+
+  // Subscribe to state changes in online mode
+  useOnlineSyncWithStateUpdate()
+
   const [view, setView] = useState<LobbyView>('choose')
   const [name, setName] = useState(gameState.myName || '')
   const [roomCodeInput, setRoomCodeInput] = useState('')

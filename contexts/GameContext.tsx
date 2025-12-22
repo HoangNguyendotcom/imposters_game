@@ -1214,6 +1214,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
       syncStateToSupabase()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     gameState.mode,
     gameState.isHost,
@@ -1222,8 +1223,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     gameState.currentPlayerIndex,
     gameState.playerTurnTimer,
     gameState.eliminatedPlayerId,
-    gameState.players,
-    syncStateToSupabase,
+    // Don't include syncStateToSupabase or players to avoid infinite loop
   ])
 
   return (
