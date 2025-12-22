@@ -1,9 +1,15 @@
 'use client'
 
 import { useGame } from '@/contexts/GameContext'
+import { useOnlineSyncWithStateUpdate } from '@/hooks/useOnlineSync'
 
 export default function RevealEliminatedScreen() {
   const { gameState, processElimination } = useGame()
+
+  // Subscribe to state changes in online mode
+  useOnlineSyncWithStateUpdate()
+
+  const isOnlineMode = gameState.mode === 'online'
 
   const eliminatedPlayer = gameState.players.find(
     (p) => p.id === gameState.eliminatedPlayerId
@@ -50,12 +56,22 @@ export default function RevealEliminatedScreen() {
           </p>
         </div>
 
-        <button
-          onClick={handleContinue}
-          className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold py-4 px-6 rounded-lg text-lg transition-all duration-200 transform hover:scale-105 shadow-lg"
-        >
-          Continue
-        </button>
+        {(!isOnlineMode || gameState.isHost) && (
+          <button
+            onClick={handleContinue}
+            className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold py-4 px-6 rounded-lg text-lg transition-all duration-200 transform hover:scale-105 shadow-lg"
+          >
+            Continue
+          </button>
+        )}
+
+        {isOnlineMode && !gameState.isHost && (
+          <div className="bg-blue-500/20 border border-blue-500/50 rounded-lg p-4 text-center">
+            <p className="text-blue-200 text-sm">
+              ⏳ Waiting for host to continue...
+            </p>
+          </div>
+        )}
       </div>
     </div>
   )

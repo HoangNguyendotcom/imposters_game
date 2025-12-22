@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { getRandomCivilianWord, getRandomWordPair, IMPOSTER_WORD } from '@/data/vietnameseWords'
+import { supabase } from '@/lib/supabaseClient'
 
 export type GamePhase =
   | 'setup'
@@ -79,6 +80,10 @@ export interface GameState {
   roomCode: string | null
   isHost: boolean
   myName: string | null
+  myClientId: string | null      // Current device's client ID
+  myPlayerId: string | null      // Current player's ID in the game
+  myRole: PlayerRole | null      // Current player's role (fetched privately in online mode)
+  myWord: string | null          // Current player's word (fetched privately in online mode)
   // Points tracking
   currentRound: number
   voteHistory: VoteRecord[]
@@ -127,6 +132,11 @@ interface GameContextType {
   playerHistory: PlayerHistoryEntry[]
   resetHistory: () => void
   removePlayerFromHistory: (name: string) => void
+  // Online sync functions
+  syncStateToSupabase: () => Promise<void>
+  fetchMyRole: () => Promise<void>
+  submitVoteOnline: (targetId: string) => Promise<void>
+  initializeClientId: () => void
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined)
@@ -157,6 +167,10 @@ const defaultGameState: GameState = {
   roomCode: null,
   isHost: false,
   myName: null,
+  myClientId: null,
+  myPlayerId: null,
+  myRole: null,
+  myWord: null,
   currentRound: 0,
   voteHistory: [],
   eliminationHistory: [],
@@ -303,28 +317,40 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     }))
   }
 
-  const setPhase = (phase: GamePhase) => {
+  const setPhase = async (phase: GamePhase) => {
     setGameState((prev) => ({ ...prev, phase }))
+
+    // Sync to Supabase if in online mode and is host
+    if (gameState.mode === 'online' && gameState.isHost && gameState.roomId) {
+      try {
+        await supabase
+          .from('room_state')
+          .update({ phase })
+          .eq('room_id', gameState.roomId)
+      } catch (error) {
+        console.error('Error syncing phase to Supabase:', error)
+      }
+    }
   }
 
-  const assignRoles = (playersToAssign?: Omit<Player, 'role' | 'word' | 'votes'>[]) => {
+  const assignRoles = async (playersToAssign?: Omit<Player, 'role' | 'word' | 'votes'>[]) => {
     const players = playersToAssign || gameState.players
     const playerCount = players.length
     const imposterCount = gameState.imposterCount
-    
+
     // Store original players for playAgain
     const originalPlayers = players.map((p) => ({
       id: p.id,
       name: p.name,
     }))
-    
+
     // Step 1: Shuffle player array
     const shuffled = [...players].sort(() => Math.random() - 0.5)
-    
+
     let civilianWord: string | null = null
     let spyWord: string | null = null
     let imposterHint: string | null = null
-    
+
     if (gameState.spyCount > 0) {
       // Spy mode: use word pairs
       const wordPair = getRandomWordPair()
@@ -383,6 +409,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         eliminationHistory: [],
         allPlayersSnapshot: finalPlayers.map(p => ({ ...p })),
       }))
+
+      // Online mode: Write roles to player_roles table
+      if (gameState.mode === 'online' && gameState.isHost && gameState.roomId) {
+        await writeRolesToSupabase(finalPlayers, gameState.roomId, civilianWord, spyWord, imposterHint)
+      }
     } else {
       // No spy mode: use word pairs, imposters get hint
       const wordPair = getRandomWordPair()
@@ -420,6 +451,78 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         eliminationHistory: [],
         allPlayersSnapshot: finalPlayers.map(p => ({ ...p })),
       }))
+
+      // Online mode: Write roles to player_roles table
+      if (gameState.mode === 'online' && gameState.isHost && gameState.roomId) {
+        await writeRolesToSupabase(finalPlayers, gameState.roomId, civilianWord, null, imposterHint)
+      }
+    }
+
+    // Helper function to write roles to Supabase
+    async function writeRolesToSupabase(
+      players: Player[],
+      roomId: string,
+      civilianWord: string | null,
+      spyWord: string | null,
+      imposterHint: string | null
+    ) {
+      try {
+        // Delete existing roles for this room
+        await supabase.from('player_roles').delete().eq('room_id', roomId)
+
+        // Get room_players to map client_ids
+        const { data: roomPlayers } = await supabase
+          .from('room_players')
+          .select('id, client_id, name')
+          .eq('room_id', roomId)
+
+        if (!roomPlayers) return
+
+        // Insert new roles
+        const roleInserts = players.map((player) => {
+          const roomPlayer = roomPlayers.find((rp) => rp.name === player.name)
+          return {
+            room_id: roomId,
+            player_id: player.id,
+            client_id: roomPlayer?.client_id || '',
+            role: player.role,
+            word: player.word,
+          }
+        })
+
+        await supabase.from('player_roles').insert(roleInserts)
+
+        // Sync game state to room_state
+        const stateToSync = {
+          phase: 'reveal-roles',
+          civilianWord,
+          spyWord,
+          imposterHint,
+          currentRound: 1,
+          currentPlayerIndex: 0,
+          playerTurnTimer: 0,
+          roundDuration: gameState.roundDuration,
+          imposterCount: gameState.imposterCount,
+          spyCount: gameState.spyCount,
+          eliminatedPlayerId: null,
+          imposterGuessedCorrectly: false,
+          players: players.map(p => ({
+            id: p.id,
+            name: p.name,
+            votes: p.votes,
+            votedFor: p.votedFor,
+          })),
+          voteHistory: [],
+          eliminationHistory: [],
+        }
+
+        await supabase
+          .from('room_state')
+          .update({ state_json: stateToSync, phase: 'reveal-roles' })
+          .eq('room_id', roomId)
+      } catch (error) {
+        console.error('Error writing roles to Supabase:', error)
+      }
     }
   }
 
@@ -905,6 +1008,110 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     setGameState((prev) => ({ ...prev, historyRecorded: true }))
   }, [gameState.phase, gameState.historyRecorded, calculateResults, calculatePoints, playerHistory, persistHistory])
 
+  // ====================
+  // Online Sync Functions
+  // ====================
+
+  // Initialize or retrieve client ID (unique per device)
+  const initializeClientId = useCallback(() => {
+    if (typeof window === 'undefined') return
+
+    let clientId = localStorage.getItem('imposter_client_id')
+    if (!clientId) {
+      clientId = `client_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      localStorage.setItem('imposter_client_id', clientId)
+    }
+
+    setGameState((prev) => ({ ...prev, myClientId: clientId }))
+  }, [])
+
+  // Initialize clientId on mount
+  useEffect(() => {
+    initializeClientId()
+  }, [initializeClientId])
+
+  // Sync game state to Supabase (host only)
+  const syncStateToSupabase = useCallback(async () => {
+    if (!gameState.roomId || !gameState.isHost) return
+
+    try {
+      const stateToSync = {
+        phase: gameState.phase,
+        civilianWord: gameState.civilianWord,
+        spyWord: gameState.spyWord,
+        imposterHint: gameState.imposterHint,
+        currentRound: gameState.currentRound,
+        currentPlayerIndex: gameState.currentPlayerIndex,
+        playerTurnTimer: gameState.playerTurnTimer,
+        roundDuration: gameState.roundDuration,
+        imposterCount: gameState.imposterCount,
+        spyCount: gameState.spyCount,
+        eliminatedPlayerId: gameState.eliminatedPlayerId,
+        imposterGuessedCorrectly: gameState.imposterGuessedCorrectly,
+        players: gameState.players.map(p => ({
+          id: p.id,
+          name: p.name,
+          votes: p.votes,
+          votedFor: p.votedFor,
+          // role and word are NOT included - stored separately
+        })),
+        voteHistory: gameState.voteHistory,
+        eliminationHistory: gameState.eliminationHistory,
+      }
+
+      await supabase
+        .from('room_state')
+        .update({ state_json: stateToSync, phase: gameState.phase })
+        .eq('room_id', gameState.roomId)
+    } catch (error) {
+      console.error('Error syncing state to Supabase:', error)
+    }
+  }, [gameState])
+
+  // Fetch current player's role from player_roles table
+  const fetchMyRole = useCallback(async () => {
+    if (!gameState.roomId || !gameState.myClientId) return
+
+    try {
+      const { data, error } = await supabase
+        .from('player_roles')
+        .select('role, word, player_id')
+        .eq('room_id', gameState.roomId)
+        .eq('client_id', gameState.myClientId)
+        .single()
+
+      if (error) throw error
+
+      if (data) {
+        setGameState((prev) => ({
+          ...prev,
+          myRole: data.role as PlayerRole,
+          myWord: data.word,
+          myPlayerId: data.player_id,
+        }))
+      }
+    } catch (error) {
+      console.error('Error fetching my role:', error)
+    }
+  }, [gameState.roomId, gameState.myClientId])
+
+  // Submit vote in online mode
+  const submitVoteOnline = useCallback(async (targetId: string) => {
+    if (!gameState.roomId || !gameState.myPlayerId) return
+
+    try {
+      await supabase.from('votes').insert({
+        room_id: gameState.roomId,
+        voter_client_id: gameState.myClientId,
+        voter_player_id: gameState.myPlayerId,
+        target_player_id: targetId,
+        round_number: gameState.currentRound,
+      })
+    } catch (error) {
+      console.error('Error submitting vote:', error)
+    }
+  }, [gameState.roomId, gameState.myClientId, gameState.myPlayerId, gameState.currentRound])
+
   return (
     <GameContext.Provider
       value={{
@@ -939,6 +1146,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         playerHistory,
         resetHistory,
         removePlayerFromHistory,
+        // Online sync functions
+        syncStateToSupabase,
+        fetchMyRole,
+        submitVoteOnline,
+        initializeClientId,
       }}
     >
       {children}

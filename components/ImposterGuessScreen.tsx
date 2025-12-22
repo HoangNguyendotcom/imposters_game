@@ -2,10 +2,16 @@
 
 import { useState } from 'react'
 import { useGame } from '@/contexts/GameContext'
+import { useOnlineSyncWithStateUpdate } from '@/hooks/useOnlineSync'
 
 export default function ImposterGuessScreen() {
   const { gameState, handleImposterGuess } = useGame()
   const [guess, setGuess] = useState('')
+
+  // Subscribe to state changes in online mode
+  useOnlineSyncWithStateUpdate()
+
+  const isOnlineMode = gameState.mode === 'online'
 
   // Scenario 1: A voted-out imposter is guessing
   const eliminatedPlayer = gameState.eliminatedPlayerId
@@ -17,6 +23,9 @@ export default function ImposterGuessScreen() {
     gameState.players.length === 2 ? gameState.players.find((p) => p.role === 'imposter') : null
 
   const guessingPlayer = eliminatedPlayer || lastImposter
+
+  // In online mode, check if I'm the one who should be guessing
+  const isMyTurnToGuess = isOnlineMode && gameState.myRole === 'imposter'
 
   if (!guessingPlayer || guessingPlayer.role !== 'imposter') {
     // This screen should not be visible if there's no imposter guessing
@@ -34,6 +43,25 @@ export default function ImposterGuessScreen() {
     if (guess.trim()) {
       handleImposterGuess(guess)
     }
+  }
+
+  // Online mode: Show waiting screen for non-imposters
+  if (isOnlineMode && !isMyTurnToGuess) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl p-8 md:p-12 max-w-md w-full border border-white/20">
+          <div className="text-center">
+            <div className="text-6xl mb-4">⏳</div>
+            <h1 className="text-3xl font-bold text-white mb-4">
+              Imposter is guessing...
+            </h1>
+            <p className="text-white/70 text-lg">
+              Waiting for the imposter to make their guess.
+            </p>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (

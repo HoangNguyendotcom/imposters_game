@@ -1,9 +1,13 @@
 'use client'
 
 import { useGame } from '@/contexts/GameContext'
+import { useOnlineSyncWithStateUpdate } from '@/hooks/useOnlineSync'
 
 export default function ResultsScreen() {
   const { gameState, resetGame, playAgain, calculateResults, calculatePoints } = useGame()
+
+  // Subscribe to state changes in online mode
+  useOnlineSyncWithStateUpdate()
 
   const { winner, votedOutPlayer } = calculateResults()
   const pointsBreakdown = calculatePoints()

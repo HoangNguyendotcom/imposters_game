@@ -2,11 +2,16 @@
 
 import { useState, useEffect } from 'react'
 import { useGame } from '@/contexts/GameContext'
+import { useOnlineSyncWithStateUpdate } from '@/hooks/useOnlineSync'
 
 export default function ActiveGameRound() {
   const { gameState, nextPlayerTurn, updatePlayerTurnTimer, resetToRevealRoles } = useGame()
   const [playerTimer, setPlayerTimer] = useState(gameState.playerTurnTimer)
 
+  // Subscribe to state changes in online mode
+  useOnlineSyncWithStateUpdate()
+
+  const isOnlineMode = gameState.mode === 'online'
   const currentPlayer = gameState.players[gameState.currentPlayerIndex]
 
   useEffect(() => {
@@ -103,14 +108,24 @@ export default function ActiveGameRound() {
           </p>
         </div>
 
-        <button
-          onClick={nextPlayerTurn}
-          className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-4 px-6 rounded-lg text-lg transition-all duration-200 transform hover:scale-105 shadow-lg"
-        >
-          {gameState.currentPlayerIndex < gameState.players.length - 1
-            ? 'Next Player'
-            : 'End Round & Vote'}
-        </button>
+        {(!isOnlineMode || gameState.isHost) && (
+          <button
+            onClick={nextPlayerTurn}
+            className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-4 px-6 rounded-lg text-lg transition-all duration-200 transform hover:scale-105 shadow-lg"
+          >
+            {gameState.currentPlayerIndex < gameState.players.length - 1
+              ? 'Next Player'
+              : 'End Round & Vote'}
+          </button>
+        )}
+
+        {isOnlineMode && !gameState.isHost && (
+          <div className="bg-blue-500/20 border border-blue-500/50 rounded-lg p-4 text-center">
+            <p className="text-blue-200 text-sm">
+              ⏳ Waiting for host to advance...
+            </p>
+          </div>
+        )}
       </div>
     </div>
   )
