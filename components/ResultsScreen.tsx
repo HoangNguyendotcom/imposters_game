@@ -15,6 +15,16 @@ export default function ResultsScreen() {
   const civilians = gameState.players.filter((p) => p.role === 'civilian')
   const spies = gameState.players.filter((p) => p.role === 'spy')
 
+  // Debug logging
+  console.log('[ResultsScreen] Displaying results:', {
+    civilianWord: gameState.civilianWord,
+    spyWord: gameState.spyWord,
+    imposterHint: gameState.imposterHint,
+    currentRound: gameState.currentRound,
+    voteHistoryLength: gameState.voteHistory.length,
+    eliminationHistoryLength: gameState.eliminationHistory.length,
+  })
+
   // Calculate ranks for each player (1-based, handles ties)
   const getRank = (player: typeof pointsBreakdown[0]) => {
     const higherScores = pointsBreakdown.filter(p => p.totalPoints > player.totalPoints)

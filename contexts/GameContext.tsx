@@ -912,6 +912,15 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   }
 
   const resetToRevealRoles = () => {
+    console.log('[resetToRevealRoles] Called - preparing to reassign roles with NEW words')
+    console.log('[resetToRevealRoles] Current state before reset:', {
+      civilianWord: gameState.civilianWord,
+      spyWord: gameState.spyWord,
+      imposterHint: gameState.imposterHint,
+      voteHistoryLength: gameState.voteHistory.length,
+      eliminationHistoryLength: gameState.eliminationHistory.length,
+    })
+
     // Restore original players and reassign roles, then go to reveal-roles phase
     const playersToRestore = gameState.originalPlayers.length > 0
       ? gameState.originalPlayers
@@ -1144,38 +1153,51 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
           phase: data.phase,
           currentPlayerIndex: syncedState.currentPlayerIndex,
           playersCount: syncedState.players?.length,
+          civilianWord: syncedState.civilianWord,
+          spyWord: syncedState.spyWord,
+          imposterHint: syncedState.imposterHint,
+          voteHistoryLength: syncedState.voteHistory?.length,
+          eliminationHistoryLength: syncedState.eliminationHistory?.length,
         })
 
-        setGameState((prev) => ({
-          ...prev,
-          phase: data.phase as GamePhase,
-          civilianWord: syncedState.civilianWord ?? prev.civilianWord,
-          spyWord: syncedState.spyWord ?? prev.spyWord,
-          imposterHint: syncedState.imposterHint ?? prev.imposterHint,
-          currentRound: syncedState.currentRound ?? prev.currentRound,
-          currentPlayerIndex: syncedState.currentPlayerIndex ?? prev.currentPlayerIndex,
-          playerTurnTimer: syncedState.playerTurnTimer ?? prev.playerTurnTimer,
-          roundDuration: syncedState.roundDuration ?? prev.roundDuration,
-          imposterCount: syncedState.imposterCount ?? prev.imposterCount,
-          spyCount: syncedState.spyCount ?? prev.spyCount,
-          eliminatedPlayerId: syncedState.eliminatedPlayerId ?? prev.eliminatedPlayerId,
-          imposterGuessedCorrectly: syncedState.imposterGuessedCorrectly ?? prev.imposterGuessedCorrectly,
-          players: syncedState.players?.map((p: any) => {
-            // For non-host players, they only know their own role (from fetchMyRole)
-            // Other players' roles are not synced (privacy)
-            const existingPlayer = prev.players.find(pp => pp.id === p.id)
-            return {
-              id: p.id,
-              name: p.name,
-              votes: p.votes ?? 0,
-              votedFor: p.votedFor,
-              role: existingPlayer?.role || 'civilian',
-              word: existingPlayer?.word || '',
-            }
-          }) ?? prev.players,
-          voteHistory: syncedState.voteHistory ?? prev.voteHistory,
-          eliminationHistory: syncedState.eliminationHistory ?? prev.eliminationHistory,
-        }))
+        setGameState((prev) => {
+          console.log('[syncStateFromSupabase] Previous state words:', {
+            civilianWord: prev.civilianWord,
+            spyWord: prev.spyWord,
+            imposterHint: prev.imposterHint,
+          })
+
+          return {
+            ...prev,
+            phase: data.phase as GamePhase,
+            civilianWord: syncedState.civilianWord ?? prev.civilianWord,
+            spyWord: syncedState.spyWord ?? prev.spyWord,
+            imposterHint: syncedState.imposterHint ?? prev.imposterHint,
+            currentRound: syncedState.currentRound ?? prev.currentRound,
+            currentPlayerIndex: syncedState.currentPlayerIndex ?? prev.currentPlayerIndex,
+            playerTurnTimer: syncedState.playerTurnTimer ?? prev.playerTurnTimer,
+            roundDuration: syncedState.roundDuration ?? prev.roundDuration,
+            imposterCount: syncedState.imposterCount ?? prev.imposterCount,
+            spyCount: syncedState.spyCount ?? prev.spyCount,
+            eliminatedPlayerId: syncedState.eliminatedPlayerId ?? prev.eliminatedPlayerId,
+            imposterGuessedCorrectly: syncedState.imposterGuessedCorrectly ?? prev.imposterGuessedCorrectly,
+            players: syncedState.players?.map((p: any) => {
+              // For non-host players, they only know their own role (from fetchMyRole)
+              // Other players' roles are not synced (privacy)
+              const existingPlayer = prev.players.find(pp => pp.id === p.id)
+              return {
+                id: p.id,
+                name: p.name,
+                votes: p.votes ?? 0,
+                votedFor: p.votedFor,
+                role: existingPlayer?.role || 'civilian',
+                word: existingPlayer?.word || '',
+              }
+            }) ?? prev.players,
+            voteHistory: syncedState.voteHistory ?? prev.voteHistory,
+            eliminationHistory: syncedState.eliminationHistory ?? prev.eliminationHistory,
+          }
+        })
       }
     } catch (error) {
       console.error('Error syncing state from Supabase:', error)
