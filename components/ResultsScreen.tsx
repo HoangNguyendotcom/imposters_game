@@ -1,16 +1,27 @@
 'use client'
 
+import { useEffect } from 'react'
 import { useGame } from '@/contexts/GameContext'
 import { useOnlineSyncWithStateUpdate } from '@/hooks/useOnlineSync'
 
 export default function ResultsScreen() {
-  const { gameState, resetGame, playAgain, calculateResults, calculatePoints } = useGame()
+  const { gameState, resetGame, playAgain, calculateResults, calculatePoints, fetchVoteHistoryFromSupabase } = useGame()
 
   // Subscribe to state changes in online mode
   useOnlineSyncWithStateUpdate()
 
+  const isOnlineMode = gameState.mode === 'online'
+  const isHost = gameState.isHost
+
+  // Fetch vote history from Supabase when host reaches results (for accurate scoring)
+  useEffect(() => {
+    if (isOnlineMode && isHost) {
+      console.log('[ResultsScreen] Host fetching vote history from Supabase for scoring...')
+      fetchVoteHistoryFromSupabase()
+    }
+  }, [isOnlineMode, isHost, fetchVoteHistoryFromSupabase])
+
   const { winner, votedOutPlayer } = calculateResults()
-  const pointsBreakdown = calculatePoints()
   const imposters = gameState.players.filter((p) => p.role === 'imposter')
   const civilians = gameState.players.filter((p) => p.role === 'civilian')
   const spies = gameState.players.filter((p) => p.role === 'spy')
@@ -23,7 +34,18 @@ export default function ResultsScreen() {
     currentRound: gameState.currentRound,
     voteHistoryLength: gameState.voteHistory.length,
     eliminationHistoryLength: gameState.eliminationHistory.length,
+    isOnlineMode,
+    isHost,
   })
+
+  // Debug vote history details
+  if (isOnlineMode && isHost && gameState.voteHistory.length > 0) {
+    console.log('[ResultsScreen] Vote history for scoring:', gameState.voteHistory)
+  }
+
+  // Only calculate points breakdown if we're showing it (host or offline mode)
+  const shouldShowPointsBreakdown = !isOnlineMode || isHost
+  const pointsBreakdown = shouldShowPointsBreakdown ? calculatePoints() : []
 
   // Calculate ranks for each player (1-based, handles ties)
   const getRank = (player: typeof pointsBreakdown[0]) => {
@@ -40,6 +62,75 @@ export default function ResultsScreen() {
     return ''
   }
 
+  // Determine if current player won (for non-host online mode)
+  const myRole = gameState.myRole
+  const didIWin =
+    (winner === 'civilians' && myRole === 'civilian') ||
+    (winner === 'imposters' && myRole === 'imposter') ||
+    (winner === 'spy' && myRole === 'spy')
+
+  // Non-host player in online mode - Show simplified results
+  if (isOnlineMode && !isHost) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl p-8 md:p-12 max-w-md w-full border border-white/20">
+          <div className="text-center mb-8">
+            <div className="text-6xl mb-4">
+              {didIWin ? '🎉' : '😔'}
+            </div>
+            <h1 className="text-4xl font-bold text-white mb-2">
+              {didIWin ? 'You Win!' : 'You Lose!'}
+            </h1>
+            <p className="text-white/70 mb-4">
+              {winner === 'civilians' ? 'Civilians Win!' : winner === 'spy' ? 'Spy Wins!' : 'Imposters Win!'}
+            </p>
+            <p className="text-white/60 text-sm">
+              {winner === 'civilians'
+                ? 'All imposters were eliminated!'
+                : winner === 'spy'
+                ? 'Spy achieved victory!'
+                : gameState.imposterGuessedCorrectly
+                ? 'The imposter guessed the word correctly!'
+                : 'The imposters survived!'}
+            </p>
+          </div>
+
+          <div className="bg-white/5 rounded-lg p-4 mb-6 border border-white/10">
+            <p className="text-white/80 text-center">
+              {gameState.spyCount > 0 ? (
+                <>
+                  <span className="font-semibold">Civilian word:</span>{' '}
+                  <span className="text-blue-300 font-bold">{gameState.civilianWord}</span>
+                  {' | '}
+                  <span className="font-semibold">Spy word:</span>{' '}
+                  <span className="text-purple-300 font-bold">{gameState.spyWord}</span>
+                  {' | '}
+                  <span className="font-semibold">Imposter hint:</span>{' '}
+                  <span className="text-red-300 font-bold">Gợi ý: {gameState.imposterHint}</span>
+                </>
+              ) : (
+                <>
+                  <span className="font-semibold">Civilian word:</span>{' '}
+                  <span className="text-blue-300 font-bold">{gameState.civilianWord}</span>
+                  {' | '}
+                  <span className="font-semibold">Imposter hint:</span>{' '}
+                  <span className="text-red-300 font-bold">Gợi ý: {gameState.imposterHint}</span>
+                </>
+              )}
+            </p>
+          </div>
+
+          <div className="bg-blue-500/20 border border-blue-500/50 rounded-lg p-4 mb-6 text-center">
+            <p className="text-blue-200 text-sm">
+              ⏳ Waiting for host to start next game...
+            </p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Host or offline mode - Show full points breakdown
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl p-8 md:p-12 max-w-3xl w-full border border-white/20">

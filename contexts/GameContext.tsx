@@ -137,6 +137,7 @@ interface GameContextType {
   syncStateFromSupabase: () => Promise<void>
   fetchMyRole: () => Promise<void>
   submitVoteOnline: (targetId: string) => Promise<void>
+  fetchVoteHistoryFromSupabase: () => Promise<void>
   initializeClientId: () => void
 }
 
@@ -1283,6 +1284,62 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     }
   }, [gameState.roomId, gameState.myClientId, gameState.myPlayerId, gameState.currentRound])
 
+  // Fetch all votes from Supabase and populate voteHistory (host only, for scoring)
+  const fetchVoteHistoryFromSupabase = useCallback(async () => {
+    if (!gameState.roomId || !gameState.isHost) {
+      console.log('[fetchVoteHistoryFromSupabase] Skipping - not host or no roomId')
+      return
+    }
+
+    console.log('[fetchVoteHistoryFromSupabase] Fetching all votes for room:', gameState.roomId)
+
+    try {
+      // Fetch all votes for this room
+      const { data: votes, error } = await supabase
+        .from('votes')
+        .select('voter_player_id, target_player_id, round_number')
+        .eq('room_id', gameState.roomId)
+        .order('round_number', { ascending: true })
+
+      if (error) {
+        console.error('[fetchVoteHistoryFromSupabase] Error fetching votes:', error)
+        return
+      }
+
+      if (!votes || votes.length === 0) {
+        console.log('[fetchVoteHistoryFromSupabase] No votes found')
+        return
+      }
+
+      console.log('[fetchVoteHistoryFromSupabase] Found votes:', votes.length)
+
+      // Convert Supabase votes to VoteRecord format
+      // We need to look up roles from allPlayersSnapshot
+      const voteRecords: VoteRecord[] = votes.map((vote) => {
+        const voter = gameState.allPlayersSnapshot.find(p => p.id === vote.voter_player_id)
+        const target = gameState.allPlayersSnapshot.find(p => p.id === vote.target_player_id)
+
+        return {
+          voterId: vote.voter_player_id,
+          voterRole: voter?.role || 'civilian',
+          targetId: vote.target_player_id,
+          targetRole: target?.role || 'civilian',
+          round: vote.round_number,
+        }
+      })
+
+      console.log('[fetchVoteHistoryFromSupabase] Converted vote records:', voteRecords.length)
+
+      // Update gameState with the complete vote history
+      setGameState((prev) => ({
+        ...prev,
+        voteHistory: voteRecords,
+      }))
+    } catch (error) {
+      console.error('[fetchVoteHistoryFromSupabase] Error:', error)
+    }
+  }, [gameState.roomId, gameState.isHost, gameState.allPlayersSnapshot])
+
   // Auto-sync state to Supabase when host makes changes
   useEffect(() => {
     if (gameState.mode === 'online' && gameState.isHost && gameState.roomId) {
@@ -1346,6 +1403,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         syncStateFromSupabase,
         fetchMyRole,
         submitVoteOnline,
+        fetchVoteHistoryFromSupabase,
         initializeClientId,
       }}
     >
