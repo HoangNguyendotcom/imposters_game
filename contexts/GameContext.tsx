@@ -476,11 +476,17 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
           .select('id, client_id, name')
           .eq('room_id', roomId)
 
-        if (!roomPlayers) return
+        if (!roomPlayers) {
+          console.error('No room players found for room:', roomId)
+          return
+        }
 
-        // Insert new roles
+        // Insert new roles - match by ID since player.id is the room_players UUID
         const roleInserts = players.map((player) => {
-          const roomPlayer = roomPlayers.find((rp) => rp.name === player.name)
+          const roomPlayer = roomPlayers.find((rp) => String(rp.id) === player.id)
+          if (!roomPlayer) {
+            console.error('No room player found for player:', player.id, player.name)
+          }
           return {
             room_id: roomId,
             player_id: player.id,
@@ -490,7 +496,12 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
           }
         })
 
-        await supabase.from('player_roles').insert(roleInserts)
+        console.log('Inserting player roles:', roleInserts)
+        const { error } = await supabase.from('player_roles').insert(roleInserts)
+        if (error) {
+          console.error('Error inserting player roles:', error)
+          throw error
+        }
 
         // Sync game state to room_state
         const stateToSync = {
@@ -1013,13 +1024,14 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   // ====================
 
   // Initialize or retrieve client ID (unique per device)
+  // NOTE: Must use the same key as OnlineLobbyScreen
   const initializeClientId = useCallback(() => {
     if (typeof window === 'undefined') return
 
-    let clientId = localStorage.getItem('imposter_client_id')
+    let clientId = localStorage.getItem('imposters_client_id')
     if (!clientId) {
-      clientId = `client_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-      localStorage.setItem('imposter_client_id', clientId)
+      clientId = `client-${Math.random().toString(36).slice(2, 10)}`
+      localStorage.setItem('imposters_client_id', clientId)
     }
 
     setGameState((prev) => ({ ...prev, myClientId: clientId }))
@@ -1070,9 +1082,20 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   // Fetch current player's role from player_roles table
   const fetchMyRole = useCallback(async () => {
-    if (!gameState.roomId || !gameState.myClientId) return
+    if (!gameState.roomId || !gameState.myClientId) {
+      console.error('Cannot fetch role: missing roomId or myClientId', {
+        roomId: gameState.roomId,
+        myClientId: gameState.myClientId,
+      })
+      return
+    }
 
     try {
+      console.log('Fetching role for:', {
+        roomId: gameState.roomId,
+        clientId: gameState.myClientId,
+      })
+
       const { data, error } = await supabase
         .from('player_roles')
         .select('role, word, player_id')
@@ -1080,15 +1103,21 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         .eq('client_id', gameState.myClientId)
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error('Error from Supabase:', error)
+        throw error
+      }
 
       if (data) {
+        console.log('Role fetched successfully:', data)
         setGameState((prev) => ({
           ...prev,
           myRole: data.role as PlayerRole,
           myWord: data.word,
           myPlayerId: data.player_id,
         }))
+      } else {
+        console.error('No role data found for this client')
       }
     } catch (error) {
       console.error('Error fetching my role:', error)
