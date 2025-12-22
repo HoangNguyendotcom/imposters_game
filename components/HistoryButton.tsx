@@ -37,6 +37,49 @@ export default function HistoryButton() {
     [playerHistory]
   )
 
+  // Calculate cumulative player stats from room game history
+  const playerStats = useMemo(() => {
+    if (!isOnlineMode || roomGameHistory.length === 0) return []
+
+    const statsMap = new Map<string, {
+      name: string
+      totalPoints: number
+      gamesPlayed: number
+      civilianWins: number
+      imposterWins: number
+      spyWins: number
+    }>()
+
+    roomGameHistory.forEach((game) => {
+      game.player_results.forEach((player: any) => {
+        const existing = statsMap.get(player.playerName) || {
+          name: player.playerName,
+          totalPoints: 0,
+          gamesPlayed: 0,
+          civilianWins: 0,
+          imposterWins: 0,
+          spyWins: 0,
+        }
+
+        const isWinner =
+          (game.winner === 'civilians' && player.role === 'civilian') ||
+          (game.winner === 'imposters' && player.role === 'imposter') ||
+          (game.winner === 'spy' && player.role === 'spy')
+
+        statsMap.set(player.playerName, {
+          ...existing,
+          totalPoints: existing.totalPoints + player.totalPoints,
+          gamesPlayed: existing.gamesPlayed + 1,
+          civilianWins: existing.civilianWins + (isWinner && player.role === 'civilian' ? 1 : 0),
+          imposterWins: existing.imposterWins + (isWinner && player.role === 'imposter' ? 1 : 0),
+          spyWins: existing.spyWins + (isWinner && player.role === 'spy' ? 1 : 0),
+        })
+      })
+    })
+
+    return Array.from(statsMap.values()).sort((a, b) => b.totalPoints - a.totalPoints)
+  }, [isOnlineMode, roomGameHistory])
+
   return (
     <>
       <button
@@ -90,8 +133,66 @@ export default function HistoryButton() {
                     : 'Chưa có dữ liệu nào. Hãy chơi vài ván để bắt đầu ghi lịch sử!'}
                 </p>
               ) : isOnlineMode ? (
-                <div className="space-y-4">
-                  {roomGameHistory.map((game, index) => (
+                <div className="space-y-6">
+                  {/* Player Stats Summary Table */}
+                  {playerStats.length > 0 && (
+                    <div className="bg-slate-800/50 border border-slate-700/80 rounded-lg p-4">
+                      <h3 className="text-white font-semibold mb-3">Player Stats (All Games)</h3>
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full text-sm text-left text-white/80 border-separate border-spacing-y-1">
+                          <thead>
+                            <tr className="bg-slate-700/90 text-xs uppercase tracking-wide text-white/70">
+                              <th className="px-4 py-2 rounded-l-lg">Player</th>
+                              <th className="px-3 py-2 text-center">Total Points</th>
+                              <th className="px-3 py-2 text-center">Games</th>
+                              <th className="px-3 py-2 rounded-r-lg text-center">Wins (C/I/S)</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {playerStats.map((player, index) => (
+                              <tr
+                                key={player.name}
+                                className={`transition-colors border border-slate-600/80 ${
+                                  index === 0 ? 'bg-yellow-500/10' : 'bg-slate-800/90 hover:bg-slate-700/90'
+                                }`}
+                              >
+                                <td className="px-4 py-2 rounded-l-lg">
+                                  <div className="flex items-center gap-2">
+                                    {index === 0 && <span className="text-lg">🥇</span>}
+                                    {index === 1 && <span className="text-lg">🥈</span>}
+                                    {index === 2 && <span className="text-lg">🥉</span>}
+                                    <span className="text-white font-semibold">{player.name}</span>
+                                  </div>
+                                </td>
+                                <td className="px-3 py-2 text-center">
+                                  <span className="text-yellow-300 font-bold text-base">
+                                    {player.totalPoints}
+                                  </span>
+                                </td>
+                                <td className="px-3 py-2 text-center">
+                                  <span className="text-white/80">{player.gamesPlayed}</span>
+                                </td>
+                                <td className="px-3 py-2 rounded-r-lg text-center">
+                                  <div className="flex gap-1 justify-center text-xs">
+                                    <span className="text-blue-300">{player.civilianWins}C</span>
+                                    <span className="text-white/40">/</span>
+                                    <span className="text-red-300">{player.imposterWins}I</span>
+                                    <span className="text-white/40">/</span>
+                                    <span className="text-purple-300">{player.spyWins}S</span>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Individual Game Results */}
+                  <div className="space-y-4">
+                    <h3 className="text-white font-semibold text-sm">Game History</h3>
+                    {roomGameHistory.map((game, index) => (
                     <div key={game.id} className="bg-slate-900/90 border border-slate-700/80 rounded-lg p-4">
                       <div className="flex items-center justify-between mb-3">
                         <h3 className="text-white font-semibold">
@@ -151,6 +252,7 @@ export default function HistoryButton() {
                       </div>
                     </div>
                   ))}
+                  </div>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
