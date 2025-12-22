@@ -140,30 +140,36 @@ export default function OnlineLobbyScreen() {
   // Helper function to remove player from any previous rooms
   const leavePreviousRooms = async () => {
     try {
-      console.log('[leavePreviousRooms] Removing player from any previous rooms...')
+      console.log('[leavePreviousRooms] Starting cleanup for client_id:', clientId)
 
       // First, check if this player is a host in any room
       const { data: myPlayerRecords, error: fetchError } = await supabase
         .from('room_players')
-        .select('room_id, is_host')
+        .select('room_id, is_host, id')
         .eq('client_id', clientId)
 
       if (fetchError) {
         console.error('[leavePreviousRooms] Error fetching player records:', fetchError)
+        throw fetchError
       }
+
+      console.log('[leavePreviousRooms] Found player records:', myPlayerRecords?.length || 0)
 
       // For each room where this player is the host, promote another player
       if (myPlayerRecords && myPlayerRecords.length > 0) {
         for (const record of myPlayerRecords) {
+          console.log('[leavePreviousRooms] Processing room:', record.room_id, 'is_host:', record.is_host)
+
           if (record.is_host) {
-            console.log('[leavePreviousRooms] Player is host in room:', record.room_id)
+            console.log('[leavePreviousRooms] Player is host in room:', record.room_id, '- finding replacement...')
 
             // Find another player in the same room to promote
             const { data: otherPlayers, error: otherPlayersError } = await supabase
               .from('room_players')
-              .select('id, client_id')
+              .select('id, client_id, name')
               .eq('room_id', record.room_id)
               .neq('client_id', clientId)
+              .order('created_at', { ascending: true })
               .limit(1)
 
             if (otherPlayersError) {
@@ -173,21 +179,29 @@ export default function OnlineLobbyScreen() {
 
             if (otherPlayers && otherPlayers.length > 0) {
               const newHost = otherPlayers[0]
-              console.log('[leavePreviousRooms] Promoting new host:', newHost.client_id)
+              console.log('[leavePreviousRooms] Promoting', newHost.name, 'to host')
 
               // Update the room's host_id
-              await supabase
+              const { error: roomUpdateError } = await supabase
                 .from('rooms')
                 .update({ host_id: newHost.client_id })
                 .eq('id', record.room_id)
 
+              if (roomUpdateError) {
+                console.error('[leavePreviousRooms] Error updating room host_id:', roomUpdateError)
+              }
+
               // Update the new host's is_host flag
-              await supabase
+              const { error: playerUpdateError } = await supabase
                 .from('room_players')
                 .update({ is_host: true })
                 .eq('id', newHost.id)
 
-              console.log('[leavePreviousRooms] Successfully promoted new host')
+              if (playerUpdateError) {
+                console.error('[leavePreviousRooms] Error updating player is_host:', playerUpdateError)
+              } else {
+                console.log('[leavePreviousRooms] Successfully promoted new host:', newHost.name)
+              }
             } else {
               console.log('[leavePreviousRooms] No other players in room, room will be empty')
             }
@@ -196,18 +210,33 @@ export default function OnlineLobbyScreen() {
       }
 
       // Now remove this player from all rooms
-      const { error } = await supabase
+      console.log('[leavePreviousRooms] Deleting all room_players records for client_id:', clientId)
+      const { error: deleteError } = await supabase
         .from('room_players')
         .delete()
         .eq('client_id', clientId)
 
-      if (error) {
-        console.error('[leavePreviousRooms] Error removing from previous rooms:', error)
+      if (deleteError) {
+        console.error('[leavePreviousRooms] Error removing from previous rooms:', deleteError)
+        throw deleteError
       } else {
-        console.log('[leavePreviousRooms] Successfully removed from previous rooms')
+        console.log('[leavePreviousRooms] Successfully removed player from all previous rooms')
+      }
+
+      // Verify deletion by checking if any records remain
+      const { data: remainingRecords } = await supabase
+        .from('room_players')
+        .select('id')
+        .eq('client_id', clientId)
+
+      if (remainingRecords && remainingRecords.length > 0) {
+        console.warn('[leavePreviousRooms] WARNING: Player still has', remainingRecords.length, 'room_players records after deletion!')
+      } else {
+        console.log('[leavePreviousRooms] Verified: Player successfully removed from all rooms')
       }
     } catch (err) {
       console.error('[leavePreviousRooms] Exception:', err)
+      throw err
     }
   }
 
