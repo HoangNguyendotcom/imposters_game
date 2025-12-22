@@ -76,6 +76,18 @@ export default function OnlineLobbyScreen() {
       }
       if (!isCancelled && data) {
         setLobbyPlayers(data as RoomPlayer[])
+
+        // Check if current player became the host
+        const myPlayer = data.find((p) => p.id === gameState.myPlayerId)
+        if (myPlayer && myPlayer.is_host && !gameState.isHost) {
+          console.log('[OnlineLobbyScreen] You have been promoted to host!')
+          setOnlineInfo({
+            roomId: gameState.roomId,
+            roomCode: gameState.roomCode,
+            isHost: true,
+            myName: gameState.myName,
+          })
+        }
       }
     }
 
@@ -125,6 +137,80 @@ export default function OnlineLobbyScreen() {
     setError(null)
   }
 
+  // Helper function to remove player from any previous rooms
+  const leavePreviousRooms = async () => {
+    try {
+      console.log('[leavePreviousRooms] Removing player from any previous rooms...')
+
+      // First, check if this player is a host in any room
+      const { data: myPlayerRecords, error: fetchError } = await supabase
+        .from('room_players')
+        .select('room_id, is_host')
+        .eq('client_id', clientId)
+
+      if (fetchError) {
+        console.error('[leavePreviousRooms] Error fetching player records:', fetchError)
+      }
+
+      // For each room where this player is the host, promote another player
+      if (myPlayerRecords && myPlayerRecords.length > 0) {
+        for (const record of myPlayerRecords) {
+          if (record.is_host) {
+            console.log('[leavePreviousRooms] Player is host in room:', record.room_id)
+
+            // Find another player in the same room to promote
+            const { data: otherPlayers, error: otherPlayersError } = await supabase
+              .from('room_players')
+              .select('id, client_id')
+              .eq('room_id', record.room_id)
+              .neq('client_id', clientId)
+              .limit(1)
+
+            if (otherPlayersError) {
+              console.error('[leavePreviousRooms] Error finding other players:', otherPlayersError)
+              continue
+            }
+
+            if (otherPlayers && otherPlayers.length > 0) {
+              const newHost = otherPlayers[0]
+              console.log('[leavePreviousRooms] Promoting new host:', newHost.client_id)
+
+              // Update the room's host_id
+              await supabase
+                .from('rooms')
+                .update({ host_id: newHost.client_id })
+                .eq('id', record.room_id)
+
+              // Update the new host's is_host flag
+              await supabase
+                .from('room_players')
+                .update({ is_host: true })
+                .eq('id', newHost.id)
+
+              console.log('[leavePreviousRooms] Successfully promoted new host')
+            } else {
+              console.log('[leavePreviousRooms] No other players in room, room will be empty')
+            }
+          }
+        }
+      }
+
+      // Now remove this player from all rooms
+      const { error } = await supabase
+        .from('room_players')
+        .delete()
+        .eq('client_id', clientId)
+
+      if (error) {
+        console.error('[leavePreviousRooms] Error removing from previous rooms:', error)
+      } else {
+        console.log('[leavePreviousRooms] Successfully removed from previous rooms')
+      }
+    } catch (err) {
+      console.error('[leavePreviousRooms] Exception:', err)
+    }
+  }
+
   const handleCreateRoom = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!name.trim()) {
@@ -135,6 +221,9 @@ export default function OnlineLobbyScreen() {
     setError(null)
 
     try {
+      // Remove from any previous rooms first
+      await leavePreviousRooms()
+
       const code = generateRoomCode()
       const { data: room, error: roomError } = await supabase
         .from('rooms')
@@ -203,6 +292,9 @@ export default function OnlineLobbyScreen() {
     setError(null)
 
     try {
+      // Remove from any previous rooms first
+      await leavePreviousRooms()
+
       // Find the room by code
       const { data: room, error: roomError } = await supabase
         .from('rooms')
