@@ -143,12 +143,15 @@ interface GameContextType {
   updateLocalScoresAfterCalculation: (pointsBreakdown: PlayerPointsBreakdown[]) => void
   loadRoomGameHistory: () => Promise<any[]>
   initializeClientId: () => void
+  saveOnlineSession: () => void
+  restoreOnlineSession: () => Promise<boolean>
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined)
 
 const STORAGE_KEY = 'imposters_game_state'
 const HISTORY_STORAGE_KEY = 'imposters_game_history'
+const ONLINE_SESSION_KEY = 'imposters_online_session'
 
 const defaultGameState: GameState = {
   phase: 'setup',
@@ -187,13 +190,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const [gameState, setGameState] = useState<GameState>(defaultGameState)
   const [playerHistory, setPlayerHistory] = useState<PlayerHistoryEntry[]>([])
 
-  // Clear localStorage on mount to reset state on every page load/refresh
-  useEffect(() => {
-    // Clear any saved state on page load/refresh
-    localStorage.removeItem(STORAGE_KEY)
-    // Reset to default state
-    setGameState(defaultGameState)
-  }, [])
+  // Will restore online session later (after functions are defined)
 
   // Load history on mount (kept across page refreshes)
   useEffect(() => {
@@ -289,6 +286,10 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   }
 
   const clearOnlineInfo = () => {
+    // Clear online session from localStorage
+    localStorage.removeItem(ONLINE_SESSION_KEY)
+    console.log('[clearOnlineInfo] Cleared online session from localStorage')
+
     setGameState((prev) => ({
       ...prev,
       roomId: null,
@@ -917,6 +918,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
     setGameState(defaultGameState)
     localStorage.removeItem(STORAGE_KEY)
+    localStorage.removeItem(ONLINE_SESSION_KEY)
+    console.log('[resetGame] Cleared online session from localStorage')
   }, [gameState.mode, gameState.roomId])
 
   const continueAfterTie = () => {
@@ -1505,6 +1508,125 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     }
   }, [gameState.roomId])
 
+  // Save online session to localStorage (for resume after refresh)
+  const saveOnlineSession = useCallback(() => {
+    if (gameState.mode !== 'online' || !gameState.roomId) return
+
+    const session = {
+      roomId: gameState.roomId,
+      roomCode: gameState.roomCode,
+      myName: gameState.myName,
+      myClientId: gameState.myClientId,
+      myPlayerId: gameState.myPlayerId,
+      isHost: gameState.isHost,
+      timestamp: Date.now(),
+    }
+
+    localStorage.setItem(ONLINE_SESSION_KEY, JSON.stringify(session))
+    console.log('[saveOnlineSession] Saved online session:', session)
+  }, [gameState.mode, gameState.roomId, gameState.roomCode, gameState.myName, gameState.myClientId, gameState.myPlayerId, gameState.isHost])
+
+  // Restore online session from localStorage and reconnect to room
+  const restoreOnlineSession = useCallback(async (): Promise<boolean> => {
+    try {
+      const stored = localStorage.getItem(ONLINE_SESSION_KEY)
+      if (!stored) {
+        console.log('[restoreOnlineSession] No saved session found')
+        return false
+      }
+
+      const session = JSON.parse(stored)
+      console.log('[restoreOnlineSession] Found saved session:', session)
+
+      // Check if session is still valid (not older than 24 hours)
+      const hoursSinceLastSave = (Date.now() - session.timestamp) / (1000 * 60 * 60)
+      if (hoursSinceLastSave > 24) {
+        console.log('[restoreOnlineSession] Session expired (older than 24 hours)')
+        localStorage.removeItem(ONLINE_SESSION_KEY)
+        return false
+      }
+
+      // Check if room still exists
+      const { data: room, error: roomError } = await supabase
+        .from('rooms')
+        .select('id, code')
+        .eq('id', session.roomId)
+        .single()
+
+      if (roomError || !room) {
+        console.log('[restoreOnlineSession] Room no longer exists')
+        localStorage.removeItem(ONLINE_SESSION_KEY)
+        return false
+      }
+
+      // Check if player is still in room
+      const { data: player, error: playerError } = await supabase
+        .from('room_players')
+        .select('id')
+        .eq('room_id', session.roomId)
+        .eq('client_id', session.myClientId)
+        .single()
+
+      if (playerError || !player) {
+        console.log('[restoreOnlineSession] Player no longer in room')
+        localStorage.removeItem(ONLINE_SESSION_KEY)
+        return false
+      }
+
+      // Restore online state
+      setGameState((prev) => ({
+        ...prev,
+        mode: 'online',
+        roomId: session.roomId,
+        roomCode: session.roomCode,
+        myName: session.myName,
+        myClientId: session.myClientId,
+        myPlayerId: session.myPlayerId || player.id,
+        isHost: session.isHost,
+      }))
+
+      console.log('[restoreOnlineSession] Session restored successfully')
+
+      // Sync current room state from Supabase
+      await syncStateFromSupabase()
+
+      // Fetch player role if in game
+      await fetchMyRole()
+
+      return true
+    } catch (error) {
+      console.error('[restoreOnlineSession] Error restoring session:', error)
+      localStorage.removeItem(ONLINE_SESSION_KEY)
+      return false
+    }
+  }, [syncStateFromSupabase, fetchMyRole])
+
+  // Auto-save online session when relevant fields change
+  useEffect(() => {
+    if (gameState.mode === 'online' && gameState.roomId) {
+      saveOnlineSession()
+    }
+  }, [gameState.mode, gameState.roomId, gameState.roomCode, gameState.myName, gameState.myClientId, gameState.myPlayerId, gameState.isHost, saveOnlineSession])
+
+  // On mount: Try to restore online session from localStorage
+  useEffect(() => {
+    const attemptRestore = async () => {
+      console.log('[mount] Attempting to restore online session...')
+      const restored = await restoreOnlineSession()
+
+      if (!restored) {
+        // No online session to restore, clear offline state
+        localStorage.removeItem(STORAGE_KEY)
+        console.log('[mount] No online session found, starting fresh')
+      } else {
+        console.log('[mount] Online session restored successfully')
+      }
+    }
+
+    attemptRestore()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   // Auto-sync state to Supabase when host makes changes
   useEffect(() => {
     if (gameState.mode === 'online' && gameState.isHost && gameState.roomId) {
@@ -1574,6 +1696,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         updateLocalScoresAfterCalculation,
         loadRoomGameHistory,
         initializeClientId,
+        saveOnlineSession,
+        restoreOnlineSession,
       }}
     >
       {children}
