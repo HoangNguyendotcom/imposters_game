@@ -50,7 +50,7 @@ export function useOnlineSync() {
  * This version actually updates the game state based on Supabase changes
  */
 export function useOnlineSyncWithStateUpdate() {
-  const { gameState, setPhase } = useGame()
+  const { gameState, syncStateFromSupabase } = useGame()
 
   useEffect(() => {
     // Only subscribe in online mode, and only for non-host players
@@ -60,6 +60,9 @@ export function useOnlineSyncWithStateUpdate() {
     if (gameState.phase === 'online-lobby' || gameState.phase === 'setup') return
 
     console.log(`[useOnlineSyncWithStateUpdate] Subscribing to room_state for room ${gameState.roomId}`)
+
+    // Fetch initial state immediately
+    syncStateFromSupabase()
 
     const channel = supabase
       .channel(`room_state_sync:${gameState.roomId}`)
@@ -74,15 +77,8 @@ export function useOnlineSyncWithStateUpdate() {
         (payload) => {
           console.log('[useOnlineSyncWithStateUpdate] Room state updated:', payload)
 
-          const newState = payload.new as any
-
-          // Update phase if it changed
-          if (newState.phase && newState.phase !== gameState.phase) {
-            console.log(`[useOnlineSyncWithStateUpdate] Phase changed to: ${newState.phase}`)
-            setPhase(newState.phase)
-          }
-
-          // Individual screens will handle more specific state updates
+          // Sync all state from Supabase
+          syncStateFromSupabase()
         }
       )
       .subscribe()
@@ -91,5 +87,5 @@ export function useOnlineSyncWithStateUpdate() {
       console.log(`[useOnlineSyncWithStateUpdate] Unsubscribing from room_state for room ${gameState.roomId}`)
       supabase.removeChannel(channel)
     }
-  }, [gameState.mode, gameState.roomId, gameState.phase, gameState.isHost, setPhase])
+  }, [gameState.mode, gameState.roomId, gameState.phase, gameState.isHost, syncStateFromSupabase])
 }

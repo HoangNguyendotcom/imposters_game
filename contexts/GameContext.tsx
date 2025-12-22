@@ -134,6 +134,7 @@ interface GameContextType {
   removePlayerFromHistory: (name: string) => void
   // Online sync functions
   syncStateToSupabase: () => Promise<void>
+  syncStateFromSupabase: () => Promise<void>
   fetchMyRole: () => Promise<void>
   submitVoteOnline: (targetId: string) => Promise<void>
   initializeClientId: () => void
@@ -1046,6 +1047,26 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     initializeClientId()
   }, [initializeClientId])
 
+  // Auto-sync state to Supabase when host makes changes
+  useEffect(() => {
+    if (gameState.mode === 'online' && gameState.isHost && gameState.roomId) {
+      // Don't sync during setup or lobby
+      if (gameState.phase === 'setup' || gameState.phase === 'online-lobby') return
+
+      syncStateToSupabase()
+    }
+  }, [
+    gameState.mode,
+    gameState.isHost,
+    gameState.roomId,
+    gameState.phase,
+    gameState.currentPlayerIndex,
+    gameState.playerTurnTimer,
+    gameState.eliminatedPlayerId,
+    gameState.players,
+    syncStateToSupabase,
+  ])
+
   // Sync game state to Supabase (host only)
   const syncStateToSupabase = useCallback(async () => {
     if (!gameState.roomId || !gameState.isHost) return
@@ -1083,6 +1104,61 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       console.error('Error syncing state to Supabase:', error)
     }
   }, [gameState])
+
+  // Sync game state from Supabase (non-host players)
+  const syncStateFromSupabase = useCallback(async () => {
+    if (!gameState.roomId || gameState.isHost) return
+
+    try {
+      const { data, error } = await supabase
+        .from('room_state')
+        .select('state_json, phase')
+        .eq('room_id', gameState.roomId)
+        .single()
+
+      if (error) {
+        console.error('Error fetching room state:', error)
+        return
+      }
+
+      if (data && data.state_json) {
+        const syncedState = data.state_json as any
+
+        setGameState((prev) => ({
+          ...prev,
+          phase: data.phase as GamePhase,
+          civilianWord: syncedState.civilianWord ?? prev.civilianWord,
+          spyWord: syncedState.spyWord ?? prev.spyWord,
+          imposterHint: syncedState.imposterHint ?? prev.imposterHint,
+          currentRound: syncedState.currentRound ?? prev.currentRound,
+          currentPlayerIndex: syncedState.currentPlayerIndex ?? prev.currentPlayerIndex,
+          playerTurnTimer: syncedState.playerTurnTimer ?? prev.playerTurnTimer,
+          roundDuration: syncedState.roundDuration ?? prev.roundDuration,
+          imposterCount: syncedState.imposterCount ?? prev.imposterCount,
+          spyCount: syncedState.spyCount ?? prev.spyCount,
+          eliminatedPlayerId: syncedState.eliminatedPlayerId ?? prev.eliminatedPlayerId,
+          imposterGuessedCorrectly: syncedState.imposterGuessedCorrectly ?? prev.imposterGuessedCorrectly,
+          players: syncedState.players?.map((p: any) => {
+            // For non-host players, they only know their own role (from fetchMyRole)
+            // Other players' roles are not synced (privacy)
+            const existingPlayer = prev.players.find(pp => pp.id === p.id)
+            return {
+              id: p.id,
+              name: p.name,
+              votes: p.votes ?? 0,
+              votedFor: p.votedFor,
+              role: existingPlayer?.role || 'civilian',
+              word: existingPlayer?.word || '',
+            }
+          }) ?? prev.players,
+          voteHistory: syncedState.voteHistory ?? prev.voteHistory,
+          eliminationHistory: syncedState.eliminationHistory ?? prev.eliminationHistory,
+        }))
+      }
+    } catch (error) {
+      console.error('Error syncing state from Supabase:', error)
+    }
+  }, [gameState.roomId, gameState.isHost])
 
   // Fetch current player's role from player_roles table
   const fetchMyRole = useCallback(async () => {
@@ -1173,6 +1249,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         removePlayerFromHistory,
         // Online sync functions
         syncStateToSupabase,
+        syncStateFromSupabase,
         fetchMyRole,
         submitVoteOnline,
         initializeClientId,
