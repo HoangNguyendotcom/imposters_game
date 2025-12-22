@@ -53,6 +53,7 @@ export default function OnlineLobbyScreen() {
   const [loading, setLoading] = useState(false)
   const [starting, setStarting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [roomGameCount, setRoomGameCount] = useState<number>(0)
 
   const clientId = useMemo(() => getOrCreateClientId(), [])
 
@@ -78,7 +79,19 @@ export default function OnlineLobbyScreen() {
       }
     }
 
+    const fetchGameHistory = async () => {
+      const { data: gameHistory, error: historyError } = await supabase
+        .from('game_results')
+        .select('id')
+        .eq('room_id', roomId)
+
+      if (!historyError && gameHistory && !isCancelled) {
+        setRoomGameCount(gameHistory.length)
+      }
+    }
+
     fetchPlayers()
+    fetchGameHistory()
 
     const channel = supabase
       .channel(`room_players:${roomId}`)
@@ -190,9 +203,10 @@ export default function OnlineLobbyScreen() {
     setError(null)
 
     try {
+      // Find the room by code
       const { data: room, error: roomError } = await supabase
         .from('rooms')
-        .select('id, code')
+        .select('id, code, host_id')
         .ilike('code', roomCodeInput.trim())
         .single()
 
@@ -202,11 +216,45 @@ export default function OnlineLobbyScreen() {
         return
       }
 
+      // Check how many players are currently in the room
+      const { data: existingPlayers, error: playersError } = await supabase
+        .from('room_players')
+        .select('id')
+        .eq('room_id', room.id)
+
+      if (playersError) {
+        throw playersError
+      }
+
+      // If room is empty, this player becomes the new host
+      const isFirstPlayer = !existingPlayers || existingPlayers.length === 0
+      const willBeHost = isFirstPlayer
+
+      console.log('[handleJoinRoom] Joining room:', {
+        roomCode: room.code,
+        existingPlayers: existingPlayers?.length || 0,
+        willBeHost,
+      })
+
+      // If becoming host, update the room's host_id
+      if (willBeHost) {
+        const { error: updateError } = await supabase
+          .from('rooms')
+          .update({ host_id: clientId })
+          .eq('id', room.id)
+
+        if (updateError) {
+          console.error('[handleJoinRoom] Error updating host_id:', updateError)
+          // Don't throw - continue anyway
+        }
+      }
+
+      // Add player to room
       const { error: playerError } = await supabase.from('room_players').insert({
         room_id: room.id,
         client_id: clientId,
         name: name.trim(),
-        is_host: false,
+        is_host: willBeHost,
       })
 
       if (playerError) {
@@ -216,11 +264,28 @@ export default function OnlineLobbyScreen() {
       setOnlineInfo({
         roomId: room.id,
         roomCode: room.code,
-        isHost: false,
+        isHost: willBeHost,
         myName: name.trim(),
       })
       setRoomId(room.id)
       setView('choose')
+
+      // Check if room has game history
+      const { data: gameHistory, error: historyError } = await supabase
+        .from('game_results')
+        .select('id')
+        .eq('room_id', room.id)
+
+      if (!historyError && gameHistory) {
+        setRoomGameCount(gameHistory.length)
+        if (gameHistory.length > 0) {
+          console.log(`[handleJoinRoom] Joined room with ${gameHistory.length} previous game(s)`)
+        }
+      }
+
+      if (willBeHost) {
+        console.log('[handleJoinRoom] You are now the host of this room!')
+      }
     } catch (err: any) {
       // eslint-disable-next-line no-console
       console.error(err)
@@ -324,13 +389,21 @@ export default function OnlineLobbyScreen() {
                     </span>
                   </p>
                 )}
+                {roomGameCount > 0 && (
+                  <div className="mb-2 bg-blue-500/20 border border-blue-500/50 rounded p-2">
+                    <p className="text-xs text-blue-200">
+                      📜 This room has {roomGameCount} previous game{roomGameCount > 1 ? 's' : ''} in history.
+                      {gameState.isHost && ' You can view them in History!'}
+                    </p>
+                  </div>
+                )}
                 <p className="text-xs text-white/60 mb-1">
                   Name: <span className="font-semibold text-white">{gameState.myName}</span>
                 </p>
                 <p className="text-xs text-white/60 mb-3">
                   Role:{' '}
                   <span className="font-semibold text-white">
-                    {gameState.isHost ? 'Host' : 'Player'}
+                    {gameState.isHost ? 'Host ⭐' : 'Player'}
                   </span>
                 </p>
                 <p className="text-xs text-white/60 mb-2">Players in room:</p>
