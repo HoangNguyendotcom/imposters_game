@@ -109,12 +109,33 @@ export default function OnlineLobbyScreen() {
       .channel(`room_players:${roomId}`)
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'room_players', filter: `room_id=eq.${roomId}` },
-        () => {
+        { event: 'INSERT', schema: 'public', table: 'room_players', filter: `room_id=eq.${roomId}` },
+        (payload) => {
+          console.log('[OnlineLobbyScreen] Player joined:', payload)
           fetchPlayers()
         }
       )
-      .subscribe()
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'room_players', filter: `room_id=eq.${roomId}` },
+        (payload) => {
+          console.log('[OnlineLobbyScreen] Player updated:', payload)
+          fetchPlayers()
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'room_players' },
+        (payload) => {
+          console.log('[OnlineLobbyScreen] Player left:', payload)
+          // DELETE events don't have the room_id in the filter, so we need to check manually
+          // or just refresh the player list for any deletion
+          fetchPlayers()
+        }
+      )
+      .subscribe((status) => {
+        console.log('[OnlineLobbyScreen] Subscription status:', status)
+      })
 
     return () => {
       isCancelled = true
