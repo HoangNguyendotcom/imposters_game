@@ -192,7 +192,7 @@ export default function VotingScreen() {
           <button
             type="button"
             onClick={quitRoom}
-            className="fixed top-3 right-3 z-30 rounded-full bg-red-500/40 border border-red-400/40 text-white text-sm px-4 py-2 shadow-lg backdrop-blur-md hover:bg-red-500/60 transition-all"
+            className="fixed top-3 left-3 z-30 rounded-full bg-red-500/40 border border-red-400/40 text-white text-sm px-4 py-2 shadow-lg backdrop-blur-md hover:bg-red-500/60 transition-all"
           >
             Quit Room
           </button>
@@ -440,7 +440,7 @@ export default function VotingScreen() {
         <button
           type="button"
           onClick={quitRoom}
-          className="fixed top-3 right-3 z-30 rounded-full bg-red-500/40 border border-red-400/40 text-white text-sm px-4 py-2 shadow-lg backdrop-blur-md hover:bg-red-500/60 transition-all"
+          className="fixed top-3 left-3 z-30 rounded-full bg-red-500/40 border border-red-400/40 text-white text-sm px-4 py-2 shadow-lg backdrop-blur-md hover:bg-red-500/60 transition-all"
         >
           Quit Room
         </button>

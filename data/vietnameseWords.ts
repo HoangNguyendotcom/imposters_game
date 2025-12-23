@@ -223,16 +223,10 @@ export const vietnameseWordPairs: WordPair[] = [
   { word1: 'Bầu', word2: 'Bí', hint: 'Rau củ' },
   { word1: 'Mướp', word2: 'Bầu', hint: 'Rau củ' },
   { word1: 'Đậu bắp', word2: 'Đậu que', hint: 'Rau củ' },
-  { word1: 'Đậu xanh', word2: 'Đậu đen', hint: 'Rau củ' },
   { word1: 'Đậu phộng', word2: 'Đậu nành', hint: 'Rau củ' },
   { word1: 'Nấm rơm', word2: 'Nấm hương', hint: 'Rau củ' },
   { word1: 'Nấm kim châm', word2: 'Nấm đùi gà', hint: 'Rau củ' },
-  { word1: 'Nấm mèo', word2: 'Nấm mộc nhĩ', hint: 'Rau củ' },
-  { word1: 'Rau ngót', word2: 'Rau đay', hint: 'Rau củ' },
-  { word1: 'Rau cần', word2: 'Rau cải', hint: 'Rau củ' },
   { word1: 'Bí đao', word2: 'Bí đỏ', hint: 'Rau củ' },
-  { word1: 'Dưa leo', word2: 'Dưa chuột', hint: 'Rau củ' },
-  { word1: 'Khổ qua', word2: 'Mướp đắng', hint: 'Rau củ' },
   
   // =Mục 11: Động vật (Phân loại chi tiết)============================
   // --- Động vật (Chung / Trên cạn / Chim) ---
