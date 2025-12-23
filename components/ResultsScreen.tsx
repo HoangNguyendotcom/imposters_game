@@ -54,13 +54,15 @@ export default function ResultsScreen() {
     }
   }, [gameState.phase])
 
-  const { winner, votedOutPlayer } = calculateResults()
+  // Use the winner from gameState (synced from host in online mode)
+  const winner = gameState.winner || 'civilians' // Fallback to civilians if null
   const imposters = gameState.players.filter((p) => p.role === 'imposter')
   const civilians = gameState.players.filter((p) => p.role === 'civilian')
   const spies = gameState.players.filter((p) => p.role === 'spy')
 
   // Debug logging
   console.log('[ResultsScreen] Displaying results:', {
+    winner: gameState.winner,
     civilianWord: gameState.civilianWord,
     spyWord: gameState.spyWord,
     imposterHint: gameState.imposterHint,

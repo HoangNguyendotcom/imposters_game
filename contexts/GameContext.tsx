@@ -75,6 +75,7 @@ export interface GameState {
   imposterHint: string | null // hint assigned to imposters when spy is enabled
   imposterGuessedCorrectly: boolean // true if imposters won by guessing the word
   historyRecorded: boolean // ensure history for this game is only recorded once
+  winner: 'civilians' | 'imposters' | 'spy' | null // Winner of the game (synced from host in online mode)
   // Online metadata
   roomId: string | null
   roomCode: string | null
@@ -172,6 +173,7 @@ const defaultGameState: GameState = {
   imposterHint: null,
   imposterGuessedCorrectly: false,
   historyRecorded: false,
+  winner: null,
   roomId: null,
   roomCode: null,
   isHost: false,
@@ -433,6 +435,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         voteHistory: [],
         eliminationHistory: [],
         allPlayersSnapshot: finalPlayers.map(p => ({ ...p })),
+        winner: null,
         // Clear myRole and myWord so fetchMyRole will be triggered again in online mode
         myRole: null,
         myWord: null,
@@ -481,6 +484,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         voteHistory: [],
         eliminationHistory: [],
         allPlayersSnapshot: finalPlayers.map(p => ({ ...p })),
+        winner: null,
         // Clear myRole and myWord so fetchMyRole will be triggered again in online mode
         myRole: null,
         myWord: null,
@@ -716,11 +720,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       if (imposters.length === 0) {
         // Spy wins if spies equal civilians
         if (prev.spyCount > 0 && spies.length > 0 && spies.length === civilians.length) {
-          return { ...prev, players: updatedPlayers, phase: 'results', eliminatedPlayerId: null }
+          return { ...prev, players: updatedPlayers, phase: 'results', eliminatedPlayerId: null, winner: 'spy' }
         }
         // Civilians win if all spies are also eliminated
         if (spies.length === 0) {
-          return { ...prev, players: updatedPlayers, phase: 'results', eliminatedPlayerId: null }
+          return { ...prev, players: updatedPlayers, phase: 'results', eliminatedPlayerId: null, winner: 'civilians' }
         }
         // Otherwise, the game continues between spies and civilians
       }
@@ -980,6 +984,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
           phase: 'results',
           eliminatedPlayerId: null,
           imposterGuessedCorrectly: true,
+          winner: 'imposters',
         }
       }
 
@@ -989,12 +994,14 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       if (prev.players.length === 2 && prev.players.some((p) => p.role === 'imposter')) {
         // Imposter guessed wrong and loses. The other player wins.
         const finalPlayers = prev.players.filter((p) => p.role !== 'imposter')
+        const winner = finalPlayers[0]?.role === 'spy' ? 'spy' : 'civilians'
         return {
           ...prev,
           players: finalPlayers,
           phase: 'results',
           imposterGuessedCorrectly: false,
           eliminatedPlayerId: null,
+          winner,
         }
       }
 
@@ -1011,11 +1018,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         if (imposters.length === 0) {
           // Spy wins if spies equal civilians
           if (prev.spyCount > 0 && spies.length > 0 && spies.length === civilians.length) {
-            return { ...prev, players: updatedPlayers, phase: 'results', eliminatedPlayerId: null }
+            return { ...prev, players: updatedPlayers, phase: 'results', eliminatedPlayerId: null, winner: 'spy' }
           }
           // Civilians win if all spies are also eliminated
           if (spies.length === 0) {
-            return { ...prev, players: updatedPlayers, phase: 'results', eliminatedPlayerId: null }
+            return { ...prev, players: updatedPlayers, phase: 'results', eliminatedPlayerId: null, winner: 'civilians' }
           }
           // Otherwise, the game continues between spies and civilians
         }
@@ -1145,6 +1152,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         spyCount: gameState.spyCount,
         eliminatedPlayerId: gameState.eliminatedPlayerId,
         imposterGuessedCorrectly: gameState.imposterGuessedCorrectly,
+        winner: gameState.winner,
         players: gameState.players.map(p => ({
           id: p.id,
           name: p.name,
@@ -1187,6 +1195,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         const syncedState = data.state_json as any
         console.log('[syncStateFromSupabase] Synced state:', {
           phase: data.phase,
+          winner: syncedState.winner,
           currentPlayerIndex: syncedState.currentPlayerIndex,
           playersCount: syncedState.players?.length,
           civilianWord: syncedState.civilianWord,
@@ -1227,6 +1236,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
             spyCount: syncedState.spyCount ?? prev.spyCount,
             eliminatedPlayerId: syncedState.eliminatedPlayerId ?? prev.eliminatedPlayerId,
             imposterGuessedCorrectly: syncedState.imposterGuessedCorrectly ?? prev.imposterGuessedCorrectly,
+            winner: syncedState.winner ?? prev.winner,
             players: syncedState.players?.map((p: any) => {
               // For non-host players, they only know their own role (from fetchMyRole)
               // Other players' roles are not synced (privacy)
