@@ -55,14 +55,23 @@ export default function ResultsScreen() {
   }, [gameState.phase])
 
   // Use the winner from gameState (synced from host in online mode)
-  const winner = gameState.winner || 'civilians' // Fallback to civilians if null
+  // For offline mode or as fallback, calculate the winner if not set
+  let winner = gameState.winner
+  if (!winner && !isOnlineMode) {
+    // Offline mode: calculate winner as fallback
+    const calculated = calculateResults()
+    winner = calculated.winner
+    console.log('[ResultsScreen] Offline mode - calculated winner as fallback:', winner)
+  }
+
   const imposters = gameState.players.filter((p) => p.role === 'imposter')
   const civilians = gameState.players.filter((p) => p.role === 'civilian')
   const spies = gameState.players.filter((p) => p.role === 'spy')
 
   // Debug logging
   console.log('[ResultsScreen] Displaying results:', {
-    winner: gameState.winner,
+    winner: winner,
+    gameStateWinner: gameState.winner,
     civilianWord: gameState.civilianWord,
     spyWord: gameState.spyWord,
     imposterHint: gameState.imposterHint,
@@ -72,6 +81,33 @@ export default function ResultsScreen() {
     isOnlineMode,
     isHost,
   })
+
+  // In online mode, non-host players must wait for winner to be synced from host
+  if (isOnlineMode && !isHost && !winner) {
+    console.log('[ResultsScreen] Non-host player waiting for winner to be synced from host...')
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl p-8 md:p-12 max-w-md w-full border border-white/20">
+          <div className="text-center">
+            <div className="text-6xl mb-4">⏳</div>
+            <h1 className="text-3xl font-bold text-white mb-4">
+              Loading Results...
+            </h1>
+            <p className="text-white/70">
+              Waiting for final results from host...
+            </p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Final fallback: if winner is still null (shouldn't happen), calculate it
+  if (!winner) {
+    console.warn('[ResultsScreen] Winner is null, calculating as fallback')
+    const calculated = calculateResults()
+    winner = calculated.winner
+  }
 
   // Debug vote history details
   if (isOnlineMode && isHost && gameState.voteHistory.length > 0) {

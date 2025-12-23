@@ -106,6 +106,7 @@ interface GameContextType {
   setGameMode: (mode: GameMode) => void
   setOnlineInfo: (info: { roomId: string; roomCode: string; isHost: boolean; myName: string }) => void
   clearOnlineInfo: () => void
+  quitRoom: () => Promise<void>
   setPlayerCount: (count: number) => void
   setRoundDuration: (duration: number) => void
   setImposterCount: (count: number) => void
@@ -300,6 +301,43 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       myName: null,
       mode: 'offline',
     }))
+  }
+
+  const quitRoom = async () => {
+    console.log('[quitRoom] Non-host player quitting room...')
+
+    try {
+      // Remove player from room_players in Supabase
+      if (gameState.roomId && gameState.myClientId) {
+        console.log('[quitRoom] Removing player from room_players:', {
+          roomId: gameState.roomId,
+          clientId: gameState.myClientId,
+        })
+
+        const { error } = await supabase
+          .from('room_players')
+          .delete()
+          .eq('room_id', gameState.roomId)
+          .eq('client_id', gameState.myClientId)
+
+        if (error) {
+          console.error('[quitRoom] Error removing player from room:', error)
+        } else {
+          console.log('[quitRoom] Successfully removed player from room')
+        }
+      }
+
+      // Clear online session and reset game state
+      clearOnlineInfo()
+
+      // Reset to default game state and return to setup
+      setGameState(defaultGameState)
+      localStorage.removeItem(STORAGE_KEY)
+
+      console.log('[quitRoom] Player has quit the room, returned to setup screen')
+    } catch (err) {
+      console.error('[quitRoom] Exception:', err)
+    }
   }
 
   const setImposterCount = (count: number) => {
@@ -1704,6 +1742,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         setGameMode,
         setOnlineInfo,
         clearOnlineInfo,
+        quitRoom,
         setPlayerCount,
         setRoundDuration,
         setImposterCount,

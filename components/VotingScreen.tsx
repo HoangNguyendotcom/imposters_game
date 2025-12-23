@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabaseClient'
 import { useOnlineSyncWithStateUpdate } from '@/hooks/useOnlineSync'
 
 export default function VotingScreen() {
-  const { gameState, vote, eliminatePlayer, continueAfterTie, resetToRevealRoles, submitVoteOnline } = useGame()
+  const { gameState, vote, eliminatePlayer, continueAfterTie, resetToRevealRoles, submitVoteOnline, quitRoom } = useGame()
 
   // Subscribe to state changes in online mode
   useOnlineSyncWithStateUpdate()
@@ -187,6 +187,17 @@ export default function VotingScreen() {
   if (isEliminated) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
+        {/* Quit button for non-host players */}
+        {isOnlineMode && !gameState.isHost && (
+          <button
+            type="button"
+            onClick={quitRoom}
+            className="fixed top-3 right-3 z-30 rounded-full bg-red-500/40 border border-red-400/40 text-white text-sm px-4 py-2 shadow-lg backdrop-blur-md hover:bg-red-500/60 transition-all"
+          >
+            Quit Room
+          </button>
+        )}
+
         <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl p-8 md:p-12 max-w-md w-full border border-white/20">
           <div className="text-center">
             <div className="text-6xl mb-4">👻</div>
@@ -424,6 +435,17 @@ export default function VotingScreen() {
   // Offline mode: Sequential voting
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
+      {/* Quit button for non-host players */}
+      {isOnlineMode && !gameState.isHost && (
+        <button
+          type="button"
+          onClick={quitRoom}
+          className="fixed top-3 right-3 z-30 rounded-full bg-red-500/40 border border-red-400/40 text-white text-sm px-4 py-2 shadow-lg backdrop-blur-md hover:bg-red-500/60 transition-all"
+        >
+          Quit Room
+        </button>
+      )}
+
       <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl p-8 md:p-12 max-w-2xl w-full border border-white/20">
       <button
           onClick={resetToRevealRoles}
