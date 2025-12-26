@@ -56,6 +56,13 @@ export interface PlayerPointsBreakdown {
   breakdown: string[] // Human-readable breakdown
 }
 
+// Timeout record when a player runs out of time
+export interface TimeoutRecord {
+  playerId: string
+  playerName: string
+  round: number
+}
+
 export interface GameState {
   phase: GamePhase
   mode: GameMode
@@ -90,6 +97,7 @@ export interface GameState {
   voteHistory: VoteRecord[]
   eliminationHistory: EliminationRecord[]
   allPlayersSnapshot: Player[] // Snapshot at game start for scoring
+  timeoutHistory: TimeoutRecord[] // Track players who ran out of time
 }
 
 export interface PlayerHistoryEntry {
@@ -187,6 +195,7 @@ const defaultGameState: GameState = {
   voteHistory: [],
   eliminationHistory: [],
   allPlayersSnapshot: [],
+  timeoutHistory: [],
 }
 
 export function GameProvider({ children }: { children: React.ReactNode }) {
@@ -368,14 +377,32 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   }
 
   const setPhase = async (phase: GamePhase) => {
-    setGameState((prev) => ({ ...prev, phase }))
+    // Calculate timer values if entering playing phase
+    const isStartingPlay = phase === 'playing'
+
+    setGameState((prev) => ({
+      ...prev,
+      phase,
+      // Initialize timer when entering playing phase
+      ...(isStartingPlay ? {
+        playerTurnTimer: prev.roundDuration,
+        currentPlayerIndex: 0,
+        timer: prev.roundDuration,
+      } : {})
+    }))
 
     // Sync to Supabase if in online mode and is host
     if (gameState.mode === 'online' && gameState.isHost && gameState.roomId) {
       try {
+        const updateData: any = { phase }
+        // Also sync timer values when starting play
+        if (isStartingPlay) {
+          updateData.playerTurnTimer = gameState.roundDuration
+          updateData.currentPlayerIndex = 0
+        }
         await supabase
           .from('room_state')
-          .update({ phase })
+          .update(updateData)
           .eq('room_id', gameState.roomId)
       } catch (error) {
         console.error('Error syncing phase to Supabase:', error)
@@ -473,6 +500,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         voteHistory: [],
         eliminationHistory: [],
         allPlayersSnapshot: finalPlayers.map(p => ({ ...p })),
+        timeoutHistory: [],
         winner: null,
         // Clear myRole and myWord so fetchMyRole will be triggered again in online mode
         myRole: null,
@@ -522,6 +550,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         voteHistory: [],
         eliminationHistory: [],
         allPlayersSnapshot: finalPlayers.map(p => ({ ...p })),
+        timeoutHistory: [],
         winner: null,
         // Clear myRole and myWord so fetchMyRole will be triggered again in online mode
         myRole: null,
@@ -596,6 +625,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
           })),
           voteHistory: [],
           eliminationHistory: [],
+          timeoutHistory: [],
         }
 
         console.log('[writeRolesToSupabase] Syncing state with NEW words and EMPTY vote history:', {
@@ -647,13 +677,24 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     }))
   }
 
-  const nextPlayerTurn = () => {
+  const nextPlayerTurn = (timedOut: boolean = false) => {
     setGameState((prev) => {
+      const currentPlayer = prev.players[prev.currentPlayerIndex]
+      const newTimeoutHistory = timedOut && currentPlayer ? [
+        ...prev.timeoutHistory,
+        {
+          playerId: currentPlayer.id,
+          playerName: currentPlayer.name,
+          round: prev.currentRound,
+        }
+      ] : prev.timeoutHistory
+
       if (prev.currentPlayerIndex < prev.players.length - 1) {
         return {
           ...prev,
           currentPlayerIndex: prev.currentPlayerIndex + 1,
           playerTurnTimer: prev.roundDuration,
+          timeoutHistory: newTimeoutHistory,
         }
       } else {
         // All players have talked, end round
@@ -662,6 +703,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
           phase: 'voting',
           currentPlayerIndex: 0,
           playerTurnTimer: 0,
+          timeoutHistory: newTimeoutHistory,
         }
       }
     })
@@ -927,7 +969,15 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
           })
       }
 
-      const totalPoints = basePoints + votingPoints + roundSurvivalPoints
+      // Timeout penalty
+      const timeoutCount = gameState.timeoutHistory.filter(t => t.playerId === player.id).length
+      const timeoutPenalty = timeoutCount * -5
+
+      if (timeoutPenalty < 0) {
+        breakdown.push(`${timeoutPenalty}: Ran out of time (${timeoutCount}x)`)
+      }
+
+      const totalPoints = basePoints + votingPoints + roundSurvivalPoints + timeoutPenalty
 
       pointsBreakdown.push({
         playerId: player.id,
@@ -1227,6 +1277,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         })),
         voteHistory: gameState.voteHistory,
         eliminationHistory: gameState.eliminationHistory,
+        timeoutHistory: gameState.timeoutHistory,
       }
 
       await supabase
@@ -1317,6 +1368,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
             }) ?? prev.players,
             voteHistory: syncedState.voteHistory ?? prev.voteHistory,
             eliminationHistory: syncedState.eliminationHistory ?? prev.eliminationHistory,
+            timeoutHistory: syncedState.timeoutHistory ?? prev.timeoutHistory,
             // Clear myRole and myWord ONLY when transitioning to reveal-roles (not on every sync)
             myRole: shouldClearRole ? null : prev.myRole,
             myWord: shouldClearRole ? null : prev.myWord,

@@ -37,7 +37,7 @@ export default function ActiveGameRound() {
             // Only host can advance to next player in online mode
             if (!isOnlineMode || gameState.isHost) {
               setTimeout(() => {
-                nextPlayerTurn()
+                nextPlayerTurn(true) // true indicates timeout
               }, 500)
             }
           }

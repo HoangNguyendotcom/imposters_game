@@ -18,7 +18,7 @@ export default function SetupScreen() {
 
   // Subscribe to state changes in online mode
   useOnlineSyncWithStateUpdate()
-  const [count, setCount] = useState(gameState.playerCount || 4)
+  const [count, setCount] = useState(gameState.playerCount || 3)
   const [imposters, setImposters] = useState(
     gameState.imposterCount || 0
   )
@@ -72,7 +72,7 @@ export default function SetupScreen() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (count >= 4 && count <= 10) {
+    if (count >= 3 && count <= 10) {
       if (imposters < 0 || imposters > maxImposters) {
         return
       }
@@ -162,14 +162,14 @@ export default function SetupScreen() {
               <button
                 type="button"
                 onClick={() => {
-                  const newCount = Math.max(4, count - 1)
+                  const newCount = Math.max(3, count - 1)
                   setCount(newCount)
                   const newMax = getMaxImposters(newCount)
                   if (imposters > newMax) {
                     setImposters(newMax)
                   }
                 }}
-                disabled={isOnline || count <= 4}
+                disabled={isOnline || count <= 3}
                 className="w-12 h-12 rounded-lg bg-white/20 border border-white/30 text-white text-2xl font-bold hover:bg-white/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
               >
                 −
@@ -177,14 +177,14 @@ export default function SetupScreen() {
               <input
                 type="number"
                 id="playerCount"
-                min="4"
+                min="3"
                 max="10"
                 value={count}
                 readOnly={isOnline}
                 onChange={(e) => {
                   if (isOnline) return
-                  const newCount = parseInt(e.target.value) || 4
-                  const clampedCount = Math.min(10, Math.max(4, newCount))
+                  const newCount = parseInt(e.target.value) || 3
+                  const clampedCount = Math.min(10, Math.max(3, newCount))
                   setCount(clampedCount)
                   const newMax = getMaxImposters(clampedCount)
                   if (imposters > newMax) {
@@ -210,7 +210,7 @@ export default function SetupScreen() {
               </button>
             </div>
             <p className="text-white/60 text-sm mt-2 text-center">
-              Minimum: 4 | Maximum: 10
+              Minimum: 3 | Maximum: 10
             </p>
           </div>
 
