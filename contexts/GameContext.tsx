@@ -1012,8 +1012,35 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   const handleImposterGuess = (guess: string) => {
     setGameState((prev) => {
-      const guessMatches =
-        prev.civilianWord && guess.trim().toLowerCase() === prev.civilianWord.trim().toLowerCase()
+      // Vietnamese classifiers/stopwords to remove
+      const stopwords = [
+        'con', 'cái', 'quả', 'trái', 'cây', 'bức', 'chiếc', 'tấm', 'cuốn',
+        'bông', 'hạt', 'viên', 'tờ', 'lá', 'cặp', 'đôi', 'bộ', 'món', 'bài',
+        'ngôi', 'căn', 'toà', 'tòa', 'con', 'cục', 'miếng', 'khúc', 'mảnh',
+        'que', 'sợi', 'tia', 'làn', 'cơn', 'trận', 'cuộc', 'vụ', 'múi'
+      ]
+
+      // Function to normalize word by removing stopwords
+      const normalizeWord = (word: string): string => {
+        const normalized = word.trim().toLowerCase()
+        const words = normalized.split(/\s+/)
+
+        // Remove stopwords from the beginning
+        const filtered = words.filter((w, index) => {
+          // Only remove if it's the first word and it's a stopword
+          if (index === 0 && stopwords.includes(w)) {
+            return false
+          }
+          return true
+        })
+
+        return filtered.join(' ')
+      }
+
+      const normalizedCivilianWord = prev.civilianWord ? normalizeWord(prev.civilianWord) : ''
+      const normalizedGuess = normalizeWord(guess)
+
+      const guessMatches = normalizedCivilianWord && normalizedGuess === normalizedCivilianWord
 
       // If guess is correct, Imposters always win
       if (guessMatches) {
