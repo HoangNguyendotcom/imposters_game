@@ -481,7 +481,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     } else {
       // No spy mode: use word pairs, imposters get hint
       const wordPair = getRandomWordPair()
-      civilianWord = wordPair.word1 // Civilians get word1
+      civilianWord = Math.random() < 0.5 ? wordPair.word1 : wordPair.word2 // Randomly choose word1 or word2
       imposterHint = wordPair.hint // Imposters get hint
       console.log('[assignRoles] Generated NEW words (no-spy mode):', { civilianWord, imposterHint })
       
