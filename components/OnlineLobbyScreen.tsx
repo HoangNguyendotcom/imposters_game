@@ -38,6 +38,7 @@ export default function OnlineLobbyScreen() {
     setPhase,
     setGameMode,
     setOnlineInfo,
+    clearOnlineInfo,
     setPlayerCount,
     setPlayers,
   } = useGame()
@@ -437,6 +438,53 @@ export default function OnlineLobbyScreen() {
     }
   }
 
+  const handleKickPlayer = async (playerId: string, playerName: string) => {
+    if (!gameState.isHost || !roomId) return
+
+    try {
+      const confirmed = confirm(`Bạn có chắc muốn kick ${playerName} khỏi phòng?`)
+      if (!confirmed) return
+
+      const { error } = await supabase
+        .from('room_players')
+        .delete()
+        .eq('id', playerId)
+        .eq('room_id', roomId)
+
+      if (error) {
+        console.error('[handleKickPlayer] Error kicking player:', error)
+        setError(`Không thể kick ${playerName}`)
+      } else {
+        console.log(`[handleKickPlayer] Successfully kicked ${playerName}`)
+      }
+    } catch (err) {
+      console.error('[handleKickPlayer] Exception:', err)
+      setError('Có lỗi khi kick người chơi')
+    }
+  }
+
+  const handleQuitRoom = async () => {
+    if (!roomId) return
+
+    try {
+      const confirmed = confirm('Bạn có chắc muốn rời khỏi phòng?')
+      if (!confirmed) return
+
+      // Use the existing leavePreviousRooms logic to handle host promotion if needed
+      await leavePreviousRooms()
+
+      // Clear the room info
+      clearOnlineInfo()
+      setRoomId(null)
+      setLobbyPlayers([])
+      setView('choose')
+      console.log('[handleQuitRoom] Successfully left the room')
+    } catch (err) {
+      console.error('[handleQuitRoom] Exception:', err)
+      setError('Có lỗi khi rời phòng')
+    }
+  }
+
   const handleStartGameAsHost = async () => {
     if (!roomId || !gameState.isHost) return
 
@@ -552,17 +600,28 @@ export default function OnlineLobbyScreen() {
                 {players.length === 0 ? (
                   <p className="text-xs text-white/40">No players yet.</p>
                 ) : (
-                  <ul className="text-xs text-white/80 space-y-1">
+                  <ul className="text-xs text-white/80 space-y-1.5">
                     {players.map((p) => (
-                      <li key={p.id}>
-                        {p.is_host ? '⭐ ' : ''}
-                        {p.name}
+                      <li key={p.id} className="flex items-center justify-between">
+                        <span>
+                          {p.is_host ? '⭐ ' : ''}
+                          {p.name}
+                        </span>
+                        {gameState.isHost && !p.is_host && (
+                          <button
+                            type="button"
+                            onClick={() => handleKickPlayer(p.id, p.name)}
+                            className="ml-2 text-red-400 hover:text-red-300 text-xs px-2 py-0.5 rounded bg-red-900/30 hover:bg-red-900/50 border border-red-500/30 transition-colors"
+                          >
+                            Kick
+                          </button>
+                        )}
                       </li>
                     ))}
                   </ul>
                 )}
 
-                {gameState.isHost && (
+                {gameState.isHost ? (
                   <button
                     type="button"
                     onClick={handleStartGameAsHost}
@@ -571,7 +630,14 @@ export default function OnlineLobbyScreen() {
                   >
                     {starting ? 'Starting...' : 'Start Game...'}
                   </button>
-                  
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleQuitRoom}
+                    className="mt-4 w-full bg-red-500/80 hover:bg-red-500 text-white font-semibold py-2.5 px-4 rounded-lg text-sm transition-all border border-red-400/50"
+                  >
+                    Rời phòng
+                  </button>
                 )}
               </div>
             )}

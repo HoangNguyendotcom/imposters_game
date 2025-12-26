@@ -19,6 +19,8 @@ export const vietnameseWordPairs: WordPair[] = [
   { word1: 'Bật lửa', word2: 'Hộp diêm', hint: 'Đồ vật' },
   { word1: 'Nến thơm', word2: 'Đèn xông', hint: 'Đồ trang trí' },
   { word1: 'Bình cứu hỏa', word2: 'Chuông báo cháy', hint: 'Đồ vật' },
+  { word1: 'Thang cuốn', word2: 'Thang máy', hint: 'Thiết bị' },
+  { word1: 'Cầu thang', word2: 'Thang máy', hint: 'Kiến trúc' },
 
   // =Mục 2: Nhà bếp=================================================
   { word1: 'Cái tủ lạnh', word2: 'Cái lò vi sóng', hint: 'Thiết bị nhà bếp' },
@@ -28,58 +30,61 @@ export const vietnameseWordPairs: WordPair[] = [
   { word1: 'Cái đĩa', word2: 'Cái tô', hint: 'Đồ dùng nhà bếp' },
   { word1: 'Cái nồi', word2: 'Cái chảo', hint: 'Đồ dùng nhà bếp' },
   { word1: 'Cái nĩa', word2: 'Cái muỗng', hint: 'Đồ dùng nhà bếp' },
-  { word1: 'Nồi cơm điện', word2: 'Nồi chiên', hint: 'Thiết bị nhà bếp' },
-  { word1: 'Bếp gas', word2: 'Bếp hồng ngoại', hint: 'Thiết bị nhà bếp' },
+  { word1: 'Nồi cơm điện', word2: 'Nồi chiên không dầu', hint: 'Thiết bị nhà bếp' },
+  { word1: 'Bếp gas', word2: 'Bếp từ', hint: 'Thiết bị nhà bếp' },
   { word1: 'Ấm siêu tốc', word2: 'Phích nước', hint: 'Thiết bị nhà bếp' },
   { word1: 'Cái kéo', word2: 'Dao rọc giấy', hint: 'Đồ dùng nhà bếp' },
   { word1: 'Hũ muối', word2: 'Hũ đường', hint: 'Đồ dùng nhà bếp' },
   { word1: 'Màng bọc thực phẩm', word2: 'Giấy bạc', hint: 'Đồ dùng nhà bếp' },
   { word1: 'Phin cà phê', word2: 'Ấm pha trà', hint: 'Đồ dùng nhà bếp' },
   { word1: 'Nồi áp suất', word2: 'Nồi hầm', hint: 'Đồ dùng nhà bếp' },
+  { word1: 'Máy xay sinh tố', word2: 'Máy ép trái cây', hint: 'Thiết bị nhà bếp' },
 
   // =Mục 3: Phòng khách===============================================
   { word1: 'Ghế sofa', word2: 'Bàn trà', hint: 'Đồ dùng phòng khách' },
   { word1: 'Kệ tivi', word2: 'Tivi', hint: 'Đồ dùng phòng khách' },
-  { word1: 'Gối tựa', word2: 'Sofa', hint: 'Đồ dùng phòng khách' },
+  { word1: 'Gối tựa', word2: 'Ghế sofa', hint: 'Đồ dùng phòng khách' },
   { word1: 'Ấm trà', word2: 'Chén trà', hint: 'Đồ dùng phòng khách' },
   { word1: 'Bộ ấm chén', word2: 'Khay trà', hint: 'Đồ dùng phòng khách' },
-  { word1: 'Đồng hồ', word2: 'Tấm lịch', hint: 'Đồ dùng phòng khách' },
+  { word1: 'Đồng hồ treo tường', word2: 'Tấm lịch', hint: 'Đồ dùng phòng khách' },
   { word1: 'Loa', word2: 'Âm ly', hint: 'Đồ dùng phòng khách' },
   { word1: 'Điều khiển', word2: 'Tivi', hint: 'Đồ dùng phòng khách' },
   { word1: 'Đèn chùm', word2: 'Đèn cây', hint: 'Đồ dùng phòng khách' },
 
   // =Mục 4: Phòng ngủ=================================================
-  { word1: 'Cái giường', word2: 'Cái tủ', hint: 'Đồ dùng phòng ngủ' },
+  { word1: 'Cái giường', word2: 'Cái nệm', hint: 'Đồ dùng phòng ngủ' },
   { word1: 'Cái chăn', word2: 'Cái gối', hint: 'Đồ dùng phòng ngủ' },
   { word1: 'Tủ quần áo', word2: 'Móc treo áo quần', hint: 'Đồ dùng phòng ngủ' },
   { word1: 'Bàn trang điểm', word2: 'Gương soi', hint: 'Đồ dùng phòng ngủ' },
   { word1: 'Đèn ngủ', word2: 'Đồng hồ báo thức', hint: 'Đồ dùng phòng ngủ' },
-  { word1: 'Ga trải giường', word2: 'Cái chăn', hint: 'Đồ dùng phòng ngủ' },
+  { word1: 'Ga trải giường', word2: 'Vỏ gối', hint: 'Đồ dùng phòng ngủ' },
   { word1: 'Móc treo áo quần', word2: 'Cây phơi đồ', hint: 'Đồ dùng phòng ngủ' },
   { word1: 'Gối ôm', word2: 'Gối kê đầu', hint: 'Đồ dùng phòng ngủ' },
 
   // =Mục 5: Phòng tắm=================================================
-  { word1: 'Xà bông', word2: 'Khăn mặt', hint: 'Đồ dùng phòng tắm' },
+  { word1: 'Xà phòng', word2: 'Khăn mặt', hint: 'Đồ dùng phòng tắm' },
   { word1: 'Bồn tắm', word2: 'Vòi hoa sen', hint: 'Đồ dùng phòng tắm' },
   { word1: 'Bồn rửa mặt', word2: 'Vòi nước', hint: 'Đồ dùng phòng tắm' },
   { word1: 'Bồn cầu', word2: 'Bồn rửa mặt', hint: 'Đồ dùng phòng tắm' },
-  { word1: 'Bàn chải', word2: 'Kem đánh răng', hint: 'Đồ dùng phòng tắm' },
+  { word1: 'Bàn chải đánh răng', word2: 'Kem đánh răng', hint: 'Đồ dùng phòng tắm' },
   { word1: 'Dầu gội', word2: 'Sữa tắm', hint: 'Đồ dùng phòng tắm' },
   { word1: 'Khăn tắm', word2: 'Áo choàng tắm', hint: 'Đồ dùng phòng tắm' },
   { word1: 'Thảm chùi chân', word2: 'Dép đi trong nhà', hint: 'Đồ dùng phòng tắm' },
   { word1: 'Máy sấy tóc', word2: 'Cái lược', hint: 'Đồ dùng phòng tắm' },
-  { word1: 'Cây cọ bồn cầu', word2: 'Nước tẩy rửa bồn cầu', hint: 'Đồ dùng phòng tắm' },
+  { word1: 'Cây cọ bồn cầu', word2: 'Nước tẩy rửa', hint: 'Đồ dùng phòng tắm' },
   { word1: 'Dao cạo râu', word2: 'Bọt cạo râu', hint: 'Đồ dùng phòng tắm' },
+  { word1: 'Nước súc miệng', word2: 'Kem đánh răng', hint: 'Đồ dùng phòng tắm' },
+  { word1: 'Chỉ nha khoa', word2: 'Bàn chải đánh răng', hint: 'Đồ dùng phòng tắm' },
   
   // =Mục 6: Dọn dẹp & Giặt phơi======================================
   { word1: 'Cái chổi', word2: 'Cái hốt rác', hint: 'Dụng cụ dọn dẹp' },
   { word1: 'Nước rửa chén', word2: 'Máy rửa chén', hint: 'Dụng cụ dọn dẹp' },
   { word1: 'Thùng rác', word2: 'Túi rác', hint: 'Dụng cụ dọn dẹp' },
-  { word1: 'Máy giặt', word2: 'Máy sấy áo quần', hint: 'Dụng cụ dọn dẹp' },
+  { word1: 'Máy giặt', word2: 'Máy sấy quần áo', hint: 'Dụng cụ dọn dẹp' },
   { word1: 'Bột giặt', word2: 'Nước xả vải', hint: 'Dụng cụ dọn dẹp' },
-  { word1: 'Cây lau nhà', word2: 'Xô nước lau nhà', hint: 'Dụng cụ dọn dẹp' },
+  { word1: 'Cây lau nhà', word2: 'Xô nước', hint: 'Dụng cụ dọn dẹp' },
   { word1: 'Bình xịt lau kính', word2: 'Giẻ lau kính', hint: 'Dụng cụ dọn dẹp' },
-  { word1: 'Máy hút bụi', word2: 'Máy rửa bát', hint: 'Thiết bị gia dụng' },
+  { word1: 'Máy hút bụi', word2: 'Chổi điện', hint: 'Thiết bị gia dụng' },
 
   // =Mục 7: Dụng cụ & Văn phòng======================================
   { word1: 'Dập ghim', word2: 'Kẹp giấy', hint: 'Văn phòng phẩm' },
@@ -89,10 +94,10 @@ export const vietnameseWordPairs: WordPair[] = [
   { word1: 'Cái búa', word2: 'Cái đinh', hint: 'Dụng cụ' },
   { word1: 'Cái kìm', word2: 'Cái búa', hint: 'Dụng cụ' },
   { word1: 'Cái tua vít', word2: 'Ốc vít', hint: 'Dụng cụ' },
-  { word1: 'Cuộn dây', word2: 'Ổ cắm điện', hint: 'Dụng cụ' },
+  { word1: 'Cuộn dây điện', word2: 'Ổ cắm điện', hint: 'Dụng cụ' },
   { word1: 'Phích cắm', word2: 'Ổ cắm', hint: 'Dụng cụ' },
-  { word1: 'Dây gấc', word2: 'Dây thép', hint: 'Dụng cụ' },
-  { word1: 'Thang nhôm', word2: 'Thang tre', hint: 'Dụng cụ' },
+  { word1: 'Dây thép', word2: 'Dây dù', hint: 'Dụng cụ' },
+  { word1: 'Thang nhôm', word2: 'Thang gấp', hint: 'Dụng cụ' },
   
   // =Mục 8: Đồ ăn uống (Phân loại chi tiết)===========================
   // --- Món ăn ---
@@ -110,11 +115,9 @@ export const vietnameseWordPairs: WordPair[] = [
   { word1: 'Gà rán', word2: 'Khoai tây chiên', hint: 'Món ăn' },
   { word1: 'Pizza', word2: 'Hamburger', hint: 'Món ăn' },
   { word1: 'Bánh ép', word2: 'Bánh xèo', hint: 'Món ăn' },
-  { word1: 'Bánh nậm', word2: 'Bánh lọc', hint: 'Món ăn' },
   { word1: 'Bánh giò', word2: 'Bánh chưng', hint: 'Món ăn' },
   { word1: 'Bánh pía', word2: 'Bánh trung thu', hint: 'Món ăn' },
   { word1: 'Xúc xích', word2: 'Lạp xưởng', hint: 'Món ăn' },
-  { word1: 'Bánh đa', word2: 'Bánh phồng tôm', hint: 'Món ăn' },
   { word1: 'Nem chua', word2: 'Tré', hint: 'Món ăn' },
   { word1: 'Bún bò', word2: 'Bún riêu', hint: 'Món ăn' },
   { word1: 'Phở bò', word2: 'Phở gà', hint: 'Món ăn' },
@@ -129,11 +132,19 @@ export const vietnameseWordPairs: WordPair[] = [
   { word1: 'Tôm hấp', word2: 'Tôm nướng', hint: 'Món ăn' },
   { word1: 'Cháo gà', word2: 'Cháo vịt', hint: 'Món ăn' },
   { word1: 'Xôi gấc', word2: 'Xôi đậu', hint: 'Món ăn' },
-  { word1: 'Bánh canh', word2: 'Bánh đa', hint: 'Món ăn' },
+  { word1: 'Bánh canh', word2: 'Hủ tiếu', hint: 'Món ăn' },
   { word1: 'Chè đậu', word2: 'Chè trôi nước', hint: 'Món ăn' },
   { word1: 'Bánh flan', word2: 'Bánh pudding', hint: 'Món ăn' },
   { word1: 'Khoai chiên', word2: 'Khoai nướng', hint: 'Món ăn' },
   { word1: 'Bắp luộc', word2: 'Bắp nướng', hint: 'Món ăn' },
+  { word1: 'Sushi', word2: 'Sashimi', hint: 'Món ăn' },
+  { word1: 'Mì Ý', word2: 'Lasagna', hint: 'Món ăn' },
+  { word1: 'Tacos', word2: 'Burrito', hint: 'Món ăn' },
+  { word1: 'Dimsum', word2: 'Há cảo', hint: 'Món ăn' },
+  { word1: 'Bánh tráng trộn', word2: 'Bánh tráng nướng', hint: 'Món ăn' },
+  { word1: 'Cơm chiên', word2: 'Cơm rang', hint: 'Món ăn' },
+  { word1: 'Sandwich', word2: 'Bánh mì', hint: 'Món ăn' },
+  
   // --- Đồ uống ---
   { word1: 'Cà phê', word2: 'Trà', hint: 'Đồ uống' },
   { word1: 'Bia', word2: 'Rượu', hint: 'Đồ uống' },
@@ -149,15 +160,25 @@ export const vietnameseWordPairs: WordPair[] = [
   { word1: 'Trà đá', word2: 'Trà nóng', hint: 'Đồ uống' },
   { word1: 'Nước chanh', word2: 'Nước cam', hint: 'Đồ uống' },
   { word1: 'Sữa nóng', word2: 'Sữa đá', hint: 'Đồ uống' },
-  { word1: 'Coca', word2: 'Pepsi', hint: 'Đồ uống' },
+  { word1: 'Coca Cola', word2: 'Pepsi', hint: 'Đồ uống' },
   { word1: 'Bia lon', word2: 'Bia chai', hint: 'Đồ uống' },
-  { word1: 'Rượu vang', word2: 'Rượu đế', hint: 'Đồ uống' },
+  { word1: 'Rượu vang', word2: 'Rượu whisky', hint: 'Đồ uống' },
+  { word1: 'Cocktail', word2: 'Mocktail', hint: 'Đồ uống' },
+  { word1: 'Espresso', word2: 'Cappuccino', hint: 'Đồ uống' },
+  { word1: 'Latte', word2: 'Americano', hint: 'Đồ uống' },
+  { word1: 'Trà xanh', word2: 'Trà đen', hint: 'Đồ uống' },
+  
   // --- Đồ ăn vặt ---
   { word1: 'Kem', word2: 'Sữa chua', hint: 'Đồ ăn vặt' },
   { word1: 'Kẹo', word2: 'Bánh quy', hint: 'Đồ ăn vặt' },
   { word1: 'Hạt dưa', word2: 'Hạt bí', hint: 'Đồ ăn vặt' },
   { word1: 'Cơm cháy', word2: 'Bỏng ngô', hint: 'Đồ ăn vặt' },
-  { word1: 'Cacao', word2: 'Chocolate', hint: 'Đồ ăn vặt' },
+  { word1: 'Socola', word2: 'Kẹo dẻo', hint: 'Đồ ăn vặt' },
+  { word1: 'Kem que', word2: 'Kem ốc quế', hint: 'Đồ ăn vặt' },
+  { word1: 'Bánh snack', word2: 'Khoai tây chiên', hint: 'Đồ ăn vặt' },
+  { word1: 'Hạt điều', word2: 'Hạt hạnh nhân', hint: 'Đồ ăn vặt' },
+  { word1: 'Kẹo mút', word2: 'Kẹo cao su', hint: 'Đồ ăn vặt' },
+  
   // --- Gia vị / Nguyên liệu ---
   { word1: 'Bơ', word2: 'Phô mai', hint: 'Gia vị / Nguyên liệu' },
   { word1: 'Tương ớt', word2: 'Tương cà', hint: 'Gia vị / Nguyên liệu' },
@@ -168,6 +189,8 @@ export const vietnameseWordPairs: WordPair[] = [
   { word1: 'Sa tế', word2: 'Ớt bột', hint: 'Gia vị' },
   { word1: 'Hành phi', word2: 'Tỏi phi', hint: 'Gia vị' },
   { word1: 'Mắm ruốc', word2: 'Mắm tôm', hint: 'Gia vị' },
+  { word1: 'Bột mì', word2: 'Bột gạo', hint: 'Nguyên liệu' },
+  { word1: 'Đường trắng', word2: 'Đường nâu', hint: 'Gia vị' },
 
   // =Mục 9: Trái cây=================================================
   { word1: 'Quả táo', word2: 'Quả lê', hint: 'Trái cây' },
@@ -176,7 +199,7 @@ export const vietnameseWordPairs: WordPair[] = [
   { word1: 'Quả xoài', word2: 'Quả dứa', hint: 'Trái cây' },
   { word1: 'Quả nho', word2: 'Quả dâu', hint: 'Trái cây' },
   { word1: 'Quả đào', word2: 'Quả mận', hint: 'Trái cây' },
-  { word1: 'Quả nhãn', word2: 'Quả bòn bon', hint: 'Trái cây' },
+  { word1: 'Quả nhãn', word2: 'Quả vải', hint: 'Trái cây' },
   { word1: 'Quả mít', word2: 'Quả sầu riêng', hint: 'Trái cây' },
   { word1: 'Quả vải', word2: 'Quả chôm chôm', hint: 'Trái cây' },
   { word1: 'Quả bưởi', word2: 'Quả cam', hint: 'Trái cây' },
@@ -184,23 +207,18 @@ export const vietnameseWordPairs: WordPair[] = [
   { word1: 'Quả ổi', word2: 'Quả đu đủ', hint: 'Trái cây' },
   { word1: 'Quả bơ', word2: 'Quả dừa', hint: 'Trái cây' },
   { word1: 'Quả khế', word2: 'Quả me', hint: 'Trái cây' },
-  { word1: 'Quả quýt', word2: 'Quả cam sành', hint: 'Trái cây' },
-  { word1: 'Quả lựu', word2: 'Quả hồng', hint: 'Trái cây' },
+  { word1: 'Quả quýt', word2: 'Quả cam', hint: 'Trái cây' },
+  { word1: 'Quả lựu', word2: 'Thanh long', hint: 'Trái cây' },
   { word1: 'Quả kiwi', word2: 'Quả nho', hint: 'Trái cây' },
-  { word1: 'Quả bòn bon', word2: 'Quả nhãn', hint: 'Trái cây' },
-  { word1: 'Quả măng cụt', word2: 'Quả mangosteen', hint: 'Trái cây' },
-  { word1: 'Quả thanh long', word2: 'Quả xương rồng', hint: 'Trái cây' },
-  { word1: 'Quả mãng cầu', word2: 'Quả na', hint: 'Trái cây' },
-  { word1: 'Quả roi', word2: 'Quả mận', hint: 'Trái cây' },
-  { word1: 'Quả sapoche', word2: 'Quả hồng xiêm', hint: 'Trái cây' },
-  { word1: 'Quả cherry', word2: 'Quả nho', hint: 'Trái cây' },
-  { word1: 'Quả cam vàng', word2: 'Quả cam xanh', hint: 'Trái cây' },
-  { word1: 'Dưa gang', word2: 'Dưa lê', hint: 'Trái cây' },
+  { word1: 'Quả măng cụt', word2: 'Quả nhãn lồng', hint: 'Trái cây' },
+  { word1: 'Quả thanh long', word2: 'Quả mãng cầu', hint: 'Trái cây' },
+  { word1: 'Quả cherry', word2: 'Quả dâu tây', hint: 'Trái cây' },
+  { word1: 'Quả dưa gang', word2: 'Quả dưa chuột', hint: 'Trái cây' },
   
   // =Mục 10: Rau củ==================================================
   { word1: 'Cà chua', word2: 'Cà rốt', hint: 'Rau củ' },
   { word1: 'Khoai tây', word2: 'Khoai lang', hint: 'Rau củ' },
-  { word1: 'Củ hành', word2: 'Múi tỏi', hint: 'Rau củ' },
+  { word1: 'Củ hành', word2: 'Củ tỏi', hint: 'Rau củ' },
   { word1: 'Cải thảo', word2: 'Xà lách', hint: 'Rau củ' },
   { word1: 'Rau muống', word2: 'Rau dền', hint: 'Rau củ' },
   { word1: 'Su hào', word2: 'Súp lơ', hint: 'Rau củ' },
@@ -211,7 +229,7 @@ export const vietnameseWordPairs: WordPair[] = [
   { word1: 'Hành tây', word2: 'Hành lá', hint: 'Rau củ' },
   { word1: 'Rau mùi', word2: 'Rau răm', hint: 'Rau củ' },
   { word1: 'Nghệ', word2: 'Riềng', hint: 'Rau củ' },
-  { word1: 'Củ cải', word2: 'Cà rốt', hint: 'Rau củ' },
+  { word1: 'Củ cải', word2: 'Củ dền', hint: 'Rau củ' },
   { word1: 'Mồng tơi', word2: 'Rau lang', hint: 'Rau củ' },
   { word1: 'Giá đỗ', word2: 'Măng', hint: 'Rau củ' },
   { word1: 'Cà tím', word2: 'Cà pháo', hint: 'Rau củ' },
@@ -219,12 +237,17 @@ export const vietnameseWordPairs: WordPair[] = [
   { word1: 'Lá lốt', word2: 'Lá chanh', hint: 'Rau củ' },
   { word1: 'Rau diếp', word2: 'Xà lách', hint: 'Rau củ' },
   { word1: 'Bầu', word2: 'Bí', hint: 'Rau củ' },
-  { word1: 'Mướp', word2: 'Bầu', hint: 'Rau củ' },
+  { word1: 'Mướp', word2: 'Khổ qua', hint: 'Rau củ' },
   { word1: 'Đậu bắp', word2: 'Đậu que', hint: 'Rau củ' },
   { word1: 'Đậu phộng', word2: 'Đậu nành', hint: 'Rau củ' },
-  { word1: 'Nấm rơm', word2: 'Nấm hương', hint: 'Rau củ' },
-  { word1: 'Nấm kim châm', word2: 'Nấm đùi gà', hint: 'Rau củ' },
   { word1: 'Bí đao', word2: 'Bí đỏ', hint: 'Rau củ' },
+  { word1: 'Khoai môn', word2: 'Khoai sọ', hint: 'Rau củ' },
+  { word1: 'Cải bẹ', word2: 'Cải ngọt', hint: 'Rau củ' },
+  
+  // --- Nấm ---
+  { word1: 'Nấm rơm', word2: 'Nấm hương', hint: 'Nấm' },
+  { word1: 'Nấm kim châm', word2: 'Nấm đùi gà', hint: 'Nấm' },
+  { word1: 'Nấm mỡ', word2: 'Nấm bào ngư', hint: 'Nấm' },
   
   // =Mục 11: Động vật (Phân loại chi tiết)============================
   // --- Động vật (Chung / Trên cạn / Chim) ---
@@ -239,15 +262,15 @@ export const vietnameseWordPairs: WordPair[] = [
   { word1: 'Con khỉ', word2: 'Con vượn', hint: 'Động vật' },
   { word1: 'Con sói', word2: 'Con cáo', hint: 'Động vật' },
   { word1: 'Con dê', word2: 'Con cừu', hint: 'Động vật' },
-  { word1: 'Con cá sấu', word2: 'Con rùa', hint: 'Động vật' },
+  { word1: 'Con cá sấu', word2: 'Con thằn lằn', hint: 'Bò sát' },
   { word1: 'Con ếch', word2: 'Con nhái', hint: 'Động vật' },
-  { word1: 'Con rắn', word2: 'Con trăn', hint: 'Động vật' },
-  { word1: 'Con ngỗng', word2: 'Con thiên nga', hint: 'Động vật' },
-  { word1: 'Con vẹt', word2: 'Con sáo', hint: 'Động vật' },
-  { word1: 'Con công', word2: 'Con trĩ', hint: 'Động vật' },
-  { word1: 'Con đại bàng', word2: 'Con diều hâu', hint: 'Động vật' },
-  { word1: 'Con cú', word2: 'Con quạ', hint: 'Động vật' },
-  { word1: 'Con chim sẻ', word2: 'Con chim én', hint: 'Động vật' },
+  { word1: 'Con rắn', word2: 'Con trăn', hint: 'Bò sát' },
+  { word1: 'Con ngỗng', word2: 'Con thiên nga', hint: 'Chim' },
+  { word1: 'Con vẹt', word2: 'Con sáo', hint: 'Chim' },
+  { word1: 'Con công', word2: 'Con trĩ', hint: 'Chim' },
+  { word1: 'Con đại bàng', word2: 'Con diều hâu', hint: 'Chim' },
+  { word1: 'Con cú', word2: 'Con quạ', hint: 'Chim' },
+  { word1: 'Con chim sẻ', word2: 'Con chim én', hint: 'Chim' },
   { word1: 'Con sóc', word2: 'Con chuột', hint: 'Động vật' },
   { word1: 'Con nhím', word2: 'Con chồn', hint: 'Động vật' },
   { word1: 'Con báo', word2: 'Con linh cẩu', hint: 'Động vật' },
@@ -256,22 +279,24 @@ export const vietnameseWordPairs: WordPair[] = [
   { word1: 'Con hà mã', word2: 'Con voi', hint: 'Động vật' },
   { word1: 'Con chuột túi', word2: 'Con koala', hint: 'Động vật' },
   { word1: 'Con lừa', word2: 'Con la', hint: 'Động vật' },
-  { word1: 'Con đà điểu', word2: 'Con chim cánh cụt', hint: 'Động vật' },
-  { word1: 'Con sên', word2: 'Con ốc sên', hint: 'Động vật' },
-  { word1: 'Con đỉa', word2: 'Con giun', hint: 'Động vật' },
-  { word1: 'Con thằn lằn', word2: 'Con tắc kè', hint: 'Động vật' },
+  { word1: 'Con đà điểu', word2: 'Con chim cánh cụt', hint: 'Chim' },
+  { word1: 'Con rùa', word2: 'Con ba ba', hint: 'Bò sát' },
   { word1: 'Con gà trống', word2: 'Con gà mái', hint: 'Động vật' },
   { word1: 'Con bò đực', word2: 'Con bò cái', hint: 'Động vật' },
   { word1: 'Con heo rừng', word2: 'Con heo nhà', hint: 'Động vật' },
-  { word1: 'Con vịt', word2: 'Con ngan', hint: 'Động vật' },
-  { word1: 'Con cò', word2: 'Con hạc', hint: 'Động vật' },
-  { word1: 'Con bồ câu', word2: 'Con chim sẻ', hint: 'Động vật' },
-  { word1: 'Con chim sâu', word2: 'Con chim chích', hint: 'Động vật' },
+  { word1: 'Con vịt', word2: 'Con ngan', hint: 'Chim' },
+  { word1: 'Con cò', word2: 'Con hạc', hint: 'Chim' },
+  { word1: 'Con bồ câu', word2: 'Con chim sẻ', hint: 'Chim' },
   { word1: 'Con gấu đen', word2: 'Con gấu nâu', hint: 'Động vật' },
   { word1: 'Con cọp', word2: 'Con beo', hint: 'Động vật' },
   { word1: 'Con chó nhà', word2: 'Con chó sói', hint: 'Động vật' },
   { word1: 'Con mèo nhà', word2: 'Con mèo rừng', hint: 'Động vật' },
   { word1: 'Con vượn', word2: 'Con đười ươi', hint: 'Động vật' },
+  { word1: 'Con kangaroo', word2: 'Con wallaby', hint: 'Động vật' },
+  { word1: 'Con hươu', word2: 'Con nai', hint: 'Động vật' },
+  { word1: 'Con tắc kè', word2: 'Con kỳ đà', hint: 'Bò sát' },
+  { word1: 'Con chồn hương', word2: 'Con cầy hương', hint: 'Động vật' },
+  
   // --- Động vật biển / Dưới nước ---
   { word1: 'Con cá heo', word2: 'Con cá mập', hint: 'Động vật biển' },
   { word1: 'Con bạch tuộc', word2: 'Con mực', hint: 'Động vật biển' },
@@ -281,21 +306,25 @@ export const vietnameseWordPairs: WordPair[] = [
   { word1: 'Con sứa', word2: 'Con sao biển', hint: 'Động vật biển' },
   { word1: 'Con cá voi', word2: 'Con cá heo', hint: 'Động vật biển' },
   { word1: 'Con hải cẩu', word2: 'Con sư tử biển', hint: 'Động vật biển' },
-  { word1: 'Con cá chép', word2: 'Con cá vàng', hint: 'Động vật biển' },
-  { word1: 'Con lươn', word2: 'Con trạch', hint: 'Động vật biển' },
+  { word1: 'Con cá chép', word2: 'Con cá vàng', hint: 'Cá nước ngọt' },
+  { word1: 'Con lươn', word2: 'Con trạch', hint: 'Cá nước ngọt' },
   { word1: 'Con cá kiếm', word2: 'Con cá mập', hint: 'Động vật biển' },
   { word1: 'Con ghẹ', word2: 'Con tôm hùm', hint: 'Động vật biển' },
   { word1: 'Con hàu', word2: 'Con vẹm', hint: 'Động vật biển' },
   { word1: 'Con tôm hùm', word2: 'Con tôm càng', hint: 'Động vật biển' },
   { word1: 'Con hến', word2: 'Con trai', hint: 'Động vật biển' },
   { word1: 'Con tép', word2: 'Con tôm', hint: 'Động vật biển' },
-  { word1: 'Con cá rô', word2: 'Con cá trê', hint: 'Động vật biển' },
-  { word1: 'Con cá basa', word2: 'Con cá tra', hint: 'Động vật biển' },
-  { word1: 'Con cá lóc', word2: 'Con cá chuối', hint: 'Động vật biển' },
-  { word1: 'Con cá diêu hồng', word2: 'Con cá rô phi', hint: 'Động vật biển' },
+  { word1: 'Con cá rô', word2: 'Con cá trê', hint: 'Cá nước ngọt' },
+  { word1: 'Con cá basa', word2: 'Con cá tra', hint: 'Cá nước ngọt' },
+  { word1: 'Con cá lóc', word2: 'Con cá chuối', hint: 'Cá nước ngọt' },
+  { word1: 'Con cá diêu hồng', word2: 'Con cá rô phi', hint: 'Cá nước ngọt' },
   { word1: 'Con cá thu', word2: 'Con cá ngừ', hint: 'Động vật biển' },
   { word1: 'Con ốc hương', word2: 'Con ốc bươu', hint: 'Động vật biển' },
   { word1: 'Con ngao', word2: 'Con nghêu', hint: 'Động vật biển' },
+  { word1: 'Con rái cá', word2: 'Con hải ly', hint: 'Động vật biển' },
+  { word1: 'Con cá mập trắng', word2: 'Con cá mập búa', hint: 'Động vật biển' },
+  { word1: 'Con rùa biển', word2: 'Con rùa cạn', hint: 'Bò sát' },
+  
   // --- Côn trùng ---
   { word1: 'Con bướm', word2: 'Con chuồn chuồn', hint: 'Côn trùng' },
   { word1: 'Con ong', word2: 'Con kiến', hint: 'Côn trùng' },
@@ -305,16 +334,19 @@ export const vietnameseWordPairs: WordPair[] = [
   { word1: 'Con gián', word2: 'Con rệp', hint: 'Côn trùng' },
   { word1: 'Con ve sầu', word2: 'Con bọ ngựa', hint: 'Côn trùng' },
   { word1: 'Con đom đóm', word2: 'Con bọ rùa', hint: 'Côn trùng' },
-  { word1: 'Cào cào', word2: 'Châu chấu', hint: 'Côn trùng' },
+  { word1: 'Con cào cào', word2: 'Con châu chấu', hint: 'Côn trùng' },
   { word1: 'Con rết', word2: 'Con cuốn chiếu', hint: 'Côn trùng' },
   { word1: 'Con ve', word2: 'Con bọ chét', hint: 'Côn trùng' },
-  { word1: 'Ong mật', word2: 'Ong bắp cày', hint: 'Côn trùng' },
-  { word1: 'Kiến ba khoang', word2: 'Kiến lửa', hint: 'Côn trùng' },
+  { word1: 'Con ong mật', word2: 'Con ong bắp cày', hint: 'Côn trùng' },
+  { word1: 'Con kiến ba khoang', word2: 'Con kiến lửa', hint: 'Côn trùng' },
+  { word1: 'Con bọ cánh cứng', word2: 'Con bọ hung', hint: 'Côn trùng' },
+  { word1: 'Con giun đất', word2: 'Con đỉa', hint: 'Động vật nhỏ' },
+  { word1: 'Con ốc sên', word2: 'Con sên', hint: 'Động vật nhỏ' },
   
   // =Mục 12: Phương tiện=============================================
   { word1: 'Xe máy', word2: 'Xe đạp', hint: 'Phương tiện' },
   { word1: 'Xe hơi', word2: 'Xe buýt', hint: 'Phương tiện' },
-  { word1: 'Máy bay', word2: 'Trực thăng', hint: 'Phương tiện' },
+  { word1: 'Máy bay', word2: 'Trực thăng', hint: 'Phương tiện hàng không' },
   { word1: 'Tàu hỏa', word2: 'Tàu thủy', hint: 'Phương tiện' },
   { word1: 'Thuyền', word2: 'Canô', hint: 'Phương tiện' },
   { word1: 'Xe tải', word2: 'Xe container', hint: 'Phương tiện' },
@@ -322,7 +354,7 @@ export const vietnameseWordPairs: WordPair[] = [
   { word1: 'Xe xích lô', word2: 'Xe ba gác', hint: 'Phương tiện' },
   { word1: 'Xe taxi', word2: 'Xe khách', hint: 'Phương tiện' },
   { word1: 'Xe limousine', word2: 'Xe buýt', hint: 'Phương tiện' },
-  { word1: 'Khinh khí cầu', word2: 'Tàu lượn', hint: 'Phương tiện' },
+  { word1: 'Khinh khí cầu', word2: 'Dù lượn', hint: 'Phương tiện hàng không' },
   { word1: 'Xe cảnh sát', word2: 'Xe cứu thương', hint: 'Phương tiện' },
   { word1: 'Ván trượt', word2: 'Giày trượt', hint: 'Phương tiện' },
   { word1: 'Xe đẩy hàng', word2: 'Xe đẩy em bé', hint: 'Phương tiện' },
@@ -334,15 +366,22 @@ export const vietnameseWordPairs: WordPair[] = [
   { word1: 'Xe điện', word2: 'Xe xăng', hint: 'Phương tiện' },
   { word1: 'Xe lam', word2: 'Xe ba bánh', hint: 'Phương tiện' },
   { word1: 'Tàu cánh ngầm', word2: 'Tàu cao tốc', hint: 'Phương tiện' },
+  { word1: 'Máy bay phản lực', word2: 'Tên lửa', hint: 'Phương tiện hàng không' },
+  { word1: 'Tàu điện ngầm', word2: 'Xe buýt', hint: 'Phương tiện' },
+  { word1: 'Tàu ngầm', word2: 'Tàu chiến', hint: 'Phương tiện' },
+  { word1: 'Xe tank', word2: 'Xe bọc thép', hint: 'Phương tiện' },
+  { word1: 'Xe công nông', word2: 'Xe máy cày', hint: 'Phương tiện' },
+  { word1: 'Xe jeep', word2: 'Xe SUV', hint: 'Phương tiện' },
+  { word1: 'Tên lửa', word2: 'Vệ tinh', hint: 'Không gian' },
   
   // =Mục 13: Quần áo & Phụ kiện======================================
   { word1: 'Áo gió', word2: 'Áo len', hint: 'Trang phục' },
   { word1: 'Giày', word2: 'Dép', hint: 'Phụ kiện' },
   { word1: 'Túi xách', word2: 'Ba lô', hint: 'Phụ kiện' },
   { word1: 'Khuyên tai', word2: 'Vòng cổ', hint: 'Trang sức' },
-  { word1: 'Đồng hồ', word2: 'Kính mắt', hint: 'Phụ kiện' },
+  { word1: 'Đồng hồ đeo tay', word2: 'Kính mắt', hint: 'Phụ kiện' },
   { word1: 'Găng tay', word2: 'Khăn quàng', hint: 'Phụ kiện' },
-  { word1: 'Cà vạt', word2: 'Cái nơ', hint: 'Phụ kiện' },
+  { word1: 'Cà vạt', word2: 'Nơ đeo cổ', hint: 'Phụ kiện' },
   { word1: 'Áo sơ mi', word2: 'Áo phông', hint: 'Trang phục' },
   { word1: 'Áo thun', word2: 'Áo polo', hint: 'Trang phục' },
   { word1: 'Quần jean', word2: 'Quần shorts', hint: 'Trang phục' },
@@ -350,9 +389,9 @@ export const vietnameseWordPairs: WordPair[] = [
   { word1: 'Áo lót', word2: 'Quần lót', hint: 'Trang phục' },
   { word1: 'Đồ ngủ', word2: 'Đồ bơi', hint: 'Trang phục' },
   { word1: 'Áo dài', word2: 'Áo bà ba', hint: 'Trang phục' },
-  { word1: 'Áo mưa', word2: 'Cái ủng', hint: 'Trang phục' },
+  { word1: 'Áo mưa', word2: 'Ủng đi mưa', hint: 'Trang phục' },
   { word1: 'Giày thể thao', word2: 'Giày cao gót', hint: 'Phụ kiện' },
-  { word1: 'Đôi Boots', word2: 'Sandals', hint: 'Phụ kiện' },
+  { word1: 'Boots', word2: 'Sandals', hint: 'Phụ kiện' },
   { word1: 'Kính râm', word2: 'Kính bơi', hint: 'Phụ kiện' },
   { word1: 'Nhẫn', word2: 'Lắc tay', hint: 'Trang sức' },
   { word1: 'Vòng tay', word2: 'Dây chuyền', hint: 'Trang sức' },
@@ -360,8 +399,8 @@ export const vietnameseWordPairs: WordPair[] = [
   { word1: 'Mũ len', word2: 'Mũ lưỡi trai', hint: 'Phụ kiện' },
   { word1: 'Mũ bảo hiểm', word2: 'Mũ lưỡi trai', hint: 'Phụ kiện' },
   { word1: 'Tạp dề', word2: 'Yếm', hint: 'Trang phục' },
-  { word1: 'Áo bà ba', word2: 'Khăn rằn', hint: 'Trang phục' },
-  { word1: 'Váy cưới', word2: 'Khăn voan', hint: 'Trang phục' },
+  { word1: 'Khăn rằn', word2: 'Khăn piêu', hint: 'Phụ kiện' },
+  { word1: 'Váy cưới', word2: 'Áo vest', hint: 'Trang phục' },
   { word1: 'Cái ô', word2: 'Áo mưa', hint: 'Phụ kiện' },
   { word1: 'Áo ba lỗ', word2: 'Áo hai dây', hint: 'Trang phục' },
   { word1: 'Áo gió', word2: 'Áo phao', hint: 'Trang phục' },
@@ -369,10 +408,13 @@ export const vietnameseWordPairs: WordPair[] = [
   { word1: 'Dép lê', word2: 'Dép xỏ ngón', hint: 'Phụ kiện' },
   { word1: 'Dây buộc tóc', word2: 'Băng đô', hint: 'Phụ kiện' },
   { word1: 'Balo', word2: 'Túi đeo chéo', hint: 'Phụ kiện' },
+  { word1: 'Áo khoác hoodie', word2: 'Áo bomber', hint: 'Trang phục' },
+  { word1: 'Váy ngắn', word2: 'Váy dài', hint: 'Trang phục' },
+  { word1: 'Quần legging', word2: 'Quần tất', hint: 'Trang phục' },
   
   // =Mục 14: Thiết bị điện tử (Cá nhân)==============================
   { word1: 'Điện thoại', word2: 'Máy tính bảng', hint: 'Thiết bị điện tử' },
-  { word1: 'Máy tính', word2: 'Laptop', hint: 'Thiết bị điện tử' },
+  { word1: 'Máy tính để bàn', word2: 'Laptop', hint: 'Thiết bị điện tử' },
   { word1: 'Tivi', word2: 'Radio', hint: 'Thiết bị điện tử' },
   { word1: 'Loa', word2: 'Tai nghe', hint: 'Thiết bị điện tử' },
   { word1: 'Webcam', word2: 'Camera', hint: 'Thiết bị điện tử' },
@@ -385,15 +427,21 @@ export const vietnameseWordPairs: WordPair[] = [
   { word1: 'Micro', word2: 'Ampli', hint: 'Thiết bị điện tử' },
   { word1: 'Máy chơi game', word2: 'Tay cầm chơi game', hint: 'Thiết bị điện tử' },
   { word1: 'Đầu đĩa', word2: 'Dàn âm thanh', hint: 'Thiết bị điện tử' },
-  { word1: 'Sạc dự phòng', word2: 'Máy phát điện', hint: 'Thiết bị điện tử' },
+  { word1: 'Sạc dự phòng', word2: 'Pin dự phòng', hint: 'Thiết bị điện tử' },
   { word1: 'Máy nghe nhạc', word2: 'Máy ghi âm', hint: 'Thiết bị điện tử' },
   { word1: 'Thẻ nhớ', word2: 'Đầu đọc thẻ', hint: 'Thiết bị điện tử' },
-  { word1: 'Máy xay sinh tố', word2: 'Máy ép', hint: 'Thiết bị điện tử' },
-  { word1: 'Máy sấy tóc', word2: 'Máy cạo râu', hint: 'Thiết bị điện tử' },
   { word1: 'Máy chiếu', word2: 'Màn chiếu', hint: 'Thiết bị điện tử' },
   { word1: 'iPhone', word2: 'Samsung', hint: 'Thiết bị điện tử' },
   { word1: 'Macbook', word2: 'Laptop Dell', hint: 'Thiết bị điện tử' },
   { word1: 'Điều khiển tivi', word2: 'Điều khiển điều hòa', hint: 'Thiết bị điện tử' },
+  { word1: 'Laptop', word2: 'Tablet', hint: 'Thiết bị điện tử' },
+  { word1: 'Smartwatch', word2: 'Đồng hồ thông minh', hint: 'Thiết bị điện tử' },
+  { word1: 'Loa bluetooth', word2: 'Tai nghe bluetooth', hint: 'Thiết bị điện tử' },
+  { word1: 'Drone', word2: 'Flycam', hint: 'Thiết bị điện tử' },
+  { word1: 'Nintendo Switch', word2: 'PlayStation', hint: 'Thiết bị điện tử' },
+  { word1: 'Kindle', word2: 'Máy tính bảng', hint: 'Thiết bị điện tử' },
+  { word1: 'Router wifi', word2: 'Modem', hint: 'Thiết bị điện tử' },
+  { word1: 'Loa thông minh', word2: 'Trợ lý ảo', hint: 'Thiết bị điện tử' },
   
   // =Mục 15: Đồ dùng học tập=========================================
   { word1: 'Sách', word2: 'Vở', hint: 'Học tập' },
@@ -413,11 +461,11 @@ export const vietnameseWordPairs: WordPair[] = [
   { word1: 'Bảng đen', word2: 'Bảng trắng', hint: 'Học tập' },
   { word1: 'Phấn trắng', word2: 'Phấn màu', hint: 'Học tập' },
   { word1: 'Bút xóa', word2: 'Tẩy', hint: 'Học tập' },
+  { word1: 'Máy tính cầm tay', word2: 'Máy tính khoa học', hint: 'Học tập' },
+  { word1: 'Giấy A4', word2: 'Giấy note', hint: 'Học tập' },
+  { word1: 'Bìa hồ sơ', word2: 'Bìa kiếp', hint: 'Học tập' },
   
-  // =Mục 16: Bộ phận cơ thể===========================================
-
-  
-  // =Mục 17: Địa điểm================================================
+  // =Mục 16: Địa điểm================================================
   { word1: 'Nhà', word2: 'Khách sạn', hint: 'Địa điểm' },
   { word1: 'Trường học', word2: 'Thư viện', hint: 'Địa điểm' },
   { word1: 'Bệnh viện', word2: 'Nhà thuốc', hint: 'Địa điểm' },
@@ -433,13 +481,31 @@ export const vietnameseWordPairs: WordPair[] = [
   { word1: 'Đồng ruộng', word2: 'Ao cá', hint: 'Địa điểm' },
   { word1: 'Tiệm tạp hóa', word2: 'Cửa hàng tiện lợi', hint: 'Địa điểm' },
   { word1: 'Tiệm cắt tóc', word2: 'Tiệm làm móng', hint: 'Địa điểm' },
-  { word1: 'Trạm xăng', word2: 'Gara', hint: 'Địa điểm' },
+  { word1: 'Trạm xăng', word2: 'Gara ô tô', hint: 'Địa điểm' },
   { word1: 'Ruộng lúa', word2: 'Vườn rau', hint: 'Địa điểm' },
   { word1: 'Phòng khách', word2: 'Phòng ngủ', hint: 'Địa điểm' },
   { word1: 'Ban công', word2: 'Sân thượng', hint: 'Địa điểm' },
-
+  { word1: 'Văn phòng', word2: 'Công ty', hint: 'Địa điểm' },
+  { word1: 'Nhà máy', word2: 'Xưởng sản xuất', hint: 'Địa điểm' },
+  { word1: 'Khu vui chơi', word2: 'Công viên giải trí', hint: 'Địa điểm' },
+  { word1: 'Trung tâm thương mại', word2: 'Siêu thị', hint: 'Địa điểm' },
+  { word1: 'Spa', word2: 'Massage', hint: 'Địa điểm' },
+  { word1: 'Phòng gym', word2: 'Sân thể thao', hint: 'Địa điểm' },
+  { word1: 'Cầu', word2: 'Đường hầm', hint: 'Địa điểm' },
+  { word1: 'Núi', word2: 'Đồi', hint: 'Địa điểm' },
+  { word1: 'Hang động', word2: 'Thác nước', hint: 'Địa điểm' },
   
-  // =Mục 18: Nghề nghiệp==============================================
+  // --- Thành phố / Quốc gia ---
+  { word1: 'Hà Nội', word2: 'Sài Gòn', hint: 'Thành phố' },
+  { word1: 'Paris', word2: 'London', hint: 'Thành phố' },
+  { word1: 'Tokyo', word2: 'Seoul', hint: 'Thành phố' },
+  { word1: 'New York', word2: 'Los Angeles', hint: 'Thành phố' },
+  { word1: 'Việt Nam', word2: 'Thái Lan', hint: 'Quốc gia' },
+  { word1: 'Pháp', word2: 'Ý', hint: 'Quốc gia' },
+  { word1: 'Nhật Bản', word2: 'Hàn Quốc', hint: 'Quốc gia' },
+  { word1: 'Mỹ', word2: 'Canada', hint: 'Quốc gia' },
+
+  // =Mục 17: Nghề nghiệp==============================================
   { word1: 'Bác sĩ', word2: 'Y tá', hint: 'Nghề nghiệp' },
   { word1: 'Giáo viên', word2: 'Giảng viên', hint: 'Nghề nghiệp' },
   { word1: 'Kỹ sư', word2: 'Công nhân', hint: 'Nghề nghiệp' },
@@ -459,31 +525,43 @@ export const vietnameseWordPairs: WordPair[] = [
   { word1: 'Kế toán', word2: 'Thủ quỹ', hint: 'Nghề nghiệp' },
   { word1: 'Bán hàng', word2: 'Thu ngân', hint: 'Nghề nghiệp' },
   { word1: 'Shipper', word2: 'Tài xế', hint: 'Nghề nghiệp' },
+  { word1: 'Lập trình viên', word2: 'Nhà thiết kế', hint: 'Nghề nghiệp' },
+  { word1: 'Bác sĩ phẫu thuật', word2: 'Bác sĩ nha khoa', hint: 'Nghề nghiệp' },
+  { word1: 'Kiến trúc sư', word2: 'Kỹ sư xây dựng', hint: 'Nghề nghiệp' },
+  { word1: 'Nhà báo', word2: 'Biên tập viên', hint: 'Nghề nghiệp' },
+  { word1: 'Nhiếp ảnh gia', word2: 'Quay phim', hint: 'Nghề nghiệp' },
+  { word1: 'Lễ tân', word2: 'Thư ký', hint: 'Nghề nghiệp' },
   
-  // =Mục 19: Thời tiết & Thiên nhiên=================================
+  // =Mục 18: Thời tiết & Thiên nhiên=================================
   { word1: 'Mặt trời', word2: 'Mặt trăng', hint: 'Thiên nhiên' },
-  { word1: 'Sấm', word2: 'Chớp', hint: 'Thiên nhiên' },
+  { word1: 'Sấm', word2: 'Chớp', hint: 'Thời tiết' },
   { word1: 'Đá', word2: 'Cát', hint: 'Thiên nhiên' },
-  { word1: 'Ngôi sao', word2: 'Hành tinh', hint: 'Thiên nhiên' },
+  { word1: 'Ngôi sao', word2: 'Hành tinh', hint: 'Vũ trụ' },
   { word1: 'Sông', word2: 'Suối', hint: 'Thiên nhiên' },
-  { word1: 'Mây', word2: 'Sương', hint: 'Thiên nhiên' },
-  { word1: 'Mưa', word2: 'Tuyết', hint: 'Thiên nhiên' },
-  { word1: 'Gió', word2: 'Bão', hint: 'Thiên nhiên' },
+  { word1: 'Mây', word2: 'Sương', hint: 'Thời tiết' },
+  { word1: 'Mưa', word2: 'Tuyết', hint: 'Thời tiết' },
+  { word1: 'Gió', word2: 'Bão', hint: 'Thời tiết' },
   { word1: 'Thác nước', word2: 'Suối', hint: 'Thiên nhiên' },
   { word1: 'Rừng', word2: 'Vườn', hint: 'Thiên nhiên' },
+  { word1: 'Biển', word2: 'Đại dương', hint: 'Thiên nhiên' },
+  { word1: 'Núi lửa', word2: 'Động đất', hint: 'Thiên nhiên' },
+  { word1: 'Cầu vồng', word2: 'Sao băng', hint: 'Thiên nhiên' },
+  { word1: 'Sóng thần', word2: 'Lốc xoáy', hint: 'Thời tiết' },
+  { word1: 'Hạn hán', word2: 'Lụt lội', hint: 'Thời tiết' },
+  { word1: 'Hoàng hôn', word2: 'Bình minh', hint: 'Thiên nhiên' },
   
-  // =Mục 20: Thể thao================================================
+  // =Mục 19: Thể thao================================================
   { word1: 'Bóng đá', word2: 'Bóng rổ', hint: 'Thể thao' },
   { word1: 'Bóng chuyền', word2: 'Cầu lông', hint: 'Thể thao' },
   { word1: 'Bơi lội', word2: 'Chạy bộ', hint: 'Thể thao' },
   { word1: 'Cờ vua', word2: 'Cờ tướng', hint: 'Thể thao' },
   { word1: 'Quần vợt', word2: 'Bóng bàn', hint: 'Thể thao' },
-  { word1: 'Taekwondo', word2: 'Karate', hint: 'Thể thao' },
+  { word1: 'Taekwondo', word2: 'Karate', hint: 'Võ thuật' },
   { word1: 'Điền kinh', word2: 'Bơi lội', hint: 'Thể thao' },
   { word1: 'Nhảy xa', word2: 'Nhảy cao', hint: 'Thể thao' },
   { word1: 'Đấu kiếm', word2: 'Bắn súng', hint: 'Thể thao' },
   { word1: 'Bắn cung', word2: 'Bắn súng', hint: 'Thể thao' },
-  { word1: 'Boxing', word2: 'Đấu vật', hint: 'Thể thao' },
+  { word1: 'Boxing', word2: 'Karate', hint: 'Võ thuật' },
   { word1: 'Đua xe đạp', word2: 'Đua mô tô', hint: 'Thể thao' },
   { word1: 'Lướt ván', word2: 'Trượt tuyết', hint: 'Thể thao' },
   { word1: 'Trượt băng', word2: 'Trượt tuyết', hint: 'Thể thao' },
@@ -492,46 +570,60 @@ export const vietnameseWordPairs: WordPair[] = [
   { word1: 'Bi-a', word2: 'Bowling', hint: 'Thể thao' },
   { word1: 'Nhảy cầu', word2: 'Lặn', hint: 'Thể thao' },
   { word1: 'Đá cầu', word2: 'Cầu mây', hint: 'Thể thao' },
-  { word1: 'Quả bóng đá', word2: 'Quả bóng rổ', hint: 'Thể thao' },
-  { word1: 'Vợt tennis', word2: 'Vợt cầu lông', hint: 'Thể thao' },
-  { word1: 'Gậy golf', word2: 'Gậy bóng chày', hint: 'Thể thao' },
-  { word1: 'Lưới bóng chuyền', word2: 'Lưới cầu lông', hint: 'Thể thao' },
-  { word1: 'Khung thành', word2: 'Rổ bóng', hint: 'Thể thao' },
-  { word1: 'Mũ bơi', word2: 'Kính bơi', hint: 'Thể thao' },
-  { word1: 'Giày đá bóng', word2: 'Giày chạy bộ', hint: 'Thể thao' },
-  { word1: 'Áo đấu', word2: 'Quần đấu', hint: 'Thể thao' },
+  { word1: 'Quả bóng đá', word2: 'Quả bóng rổ', hint: 'Dụng cụ thể thao' },
+  { word1: 'Vợt tennis', word2: 'Vợt cầu lông', hint: 'Dụng cụ thể thao' },
+  { word1: 'Gậy golf', word2: 'Gậy bóng chày', hint: 'Dụng cụ thể thao' },
+  { word1: 'Lưới bóng chuyền', word2: 'Lưới cầu lông', hint: 'Dụng cụ thể thao' },
+  { word1: 'Khung thành', word2: 'Rổ bóng', hint: 'Dụng cụ thể thao' },
+  { word1: 'Mũ bơi', word2: 'Kính bơi', hint: 'Dụng cụ thể thao' },
+  { word1: 'Giày đá bóng', word2: 'Giày chạy bộ', hint: 'Dụng cụ thể thao' },
+  { word1: 'Áo đấu', word2: 'Quần đấu', hint: 'Trang phục thể thao' },
+  { word1: 'Muay Thái', word2: 'Judo', hint: 'Võ thuật' },
+  { word1: 'Đấu vật', word2: 'MMA', hint: 'Võ thuật' },
+  { word1: 'Leo núi', word2: 'Trekking', hint: 'Thể thao' },
   
-  // =Mục 21: Âm nhạc=================================================
-  { word1: 'Đàn violin', word2: 'Đàn guitar', hint: 'Âm nhạc' },
-  { word1: 'Trống đồng', word2: 'Trống Cơm', hint: 'Âm nhạc' },
-  { word1: 'Nhạc cụ: Sáo', word2: 'Nhạc cụ: Tiêu', hint: 'Âm nhạc' },
-  { word1: 'Đàn tranh', word2: 'Đàn bầu', hint: 'Âm nhạc' },
+  // =Mục 20: Âm nhạc=================================================
+  { word1: 'Đàn violin', word2: 'Đàn guitar', hint: 'Nhạc cụ' },
+  { word1: 'Trống', word2: 'Trống Cơm', hint: 'Nhạc cụ' },
+  { word1: 'Sáo', word2: 'Tiêu', hint: 'Nhạc cụ' },
+  { word1: 'Đàn tranh', word2: 'Đàn bầu', hint: 'Nhạc cụ' },
   { word1: 'Ca sĩ', word2: 'Nhạc sĩ', hint: 'Âm nhạc' },
-  { word1: 'Nhạc pop', word2: 'Nhạc rock', hint: 'Âm nhạc' },
-  { word1: 'Đàn ukulele', word2: 'Đàn ghitar', hint: 'Âm nhạc' },
+  { word1: 'Nhạc pop', word2: 'Nhạc rock', hint: 'Thể loại nhạc' },
+  { word1: 'Đàn ukulele', word2: 'Đàn guitar', hint: 'Nhạc cụ' },
   { word1: 'Nhạc trưởng', word2: 'Dàn nhạc', hint: 'Âm nhạc' },
   { word1: 'Giai điệu', word2: 'Lời bài hát', hint: 'Âm nhạc' },
   { word1: 'Nốt nhạc', word2: 'Bản nhạc', hint: 'Âm nhạc' },
   { word1: 'Album', word2: 'Bài hát', hint: 'Âm nhạc' },
   { word1: 'Phòng thu', word2: 'Sân khấu', hint: 'Âm nhạc' },
-  { word1: 'Đàn piano', word2: 'Đàn organ', hint: 'Âm nhạc' },
-  { word1: 'Trống cơm', word2: 'Trống trường', hint: 'Âm nhạc' },
-  { word1: 'Kèn trumpet', word2: 'Kèn saxophone', hint: 'Âm nhạc' },
-  { word1: 'Đàn nhị', word2: 'Đàn cò', hint: 'Âm nhạc' },
+  { word1: 'Đàn piano', word2: 'Đàn organ', hint: 'Nhạc cụ' },
+  { word1: 'Trống cơm', word2: 'Trống trường', hint: 'Nhạc cụ' },
+  { word1: 'Kèn trumpet', word2: 'Kèn saxophone', hint: 'Nhạc cụ' },
+  { word1: 'Đàn nhị', word2: 'Đàn cò', hint: 'Nhạc cụ' },
+  { word1: 'Nhạc jazz', word2: 'Nhạc blues', hint: 'Thể loại nhạc' },
+  { word1: 'Nhạc hip hop', word2: 'Nhạc rap', hint: 'Thể loại nhạc' },
+  { word1: 'Nhạc EDM', word2: 'Nhạc techno', hint: 'Thể loại nhạc' },
+  { word1: 'Đàn bass', word2: 'Đàn guitar điện', hint: 'Nhạc cụ' },
+  { word1: 'Kèn harmonica', word2: 'Kèn clarinet', hint: 'Nhạc cụ' },
 
-  // =Mục 22: Vật liệu & Vật chất=====================================
-  { word1: 'Vàng', word2: 'Bạc', hint: 'Vật chất' },
+  // =Mục 21: Vật liệu & Vật chất=====================================
+  { word1: 'Vàng', word2: 'Bạc', hint: 'Kim loại quý' },
   { word1: 'Gỗ', word2: 'Tre', hint: 'Vật liệu' },
-  { word1: 'Sắt', word2: 'Thép', hint: 'Vật liệu' },
+  { word1: 'Sắt', word2: 'Thép', hint: 'Kim loại' },
   { word1: 'Nhựa', word2: 'Cao su', hint: 'Vật liệu' },
   { word1: 'Vải', word2: 'Da', hint: 'Vật liệu' },
   { word1: 'Giấy in', word2: 'Bìa cứng', hint: 'Vật liệu' },
-  { word1: 'Gạch', word2: 'Ngói', hint: 'Vật liệu' },
-  { word1: 'Xi măng', word2: 'Vữa', hint: 'Vật liệu' },
+  { word1: 'Gạch', word2: 'Ngói', hint: 'Vật liệu xây dựng' },
+  { word1: 'Xi măng', word2: 'Vữa', hint: 'Vật liệu xây dựng' },
   { word1: 'Kính', word2: 'Pha lê', hint: 'Vật liệu' },
-  { word1: 'Đồng', word2: 'Nhôm', hint: 'Vật liệu' },
+  { word1: 'Đồng', word2: 'Nhôm', hint: 'Kim loại' },
+  { word1: 'Đá granite', word2: 'Đá marble', hint: 'Vật liệu' },
+  { word1: 'Kim cương', word2: 'Pha lê', hint: 'Đá quý' },
+  { word1: 'Đất sét', word2: 'Sành sứ', hint: 'Vật liệu' },
+  { word1: 'Titan', word2: 'Bạch kim', hint: 'Kim loại' },
+  { word1: 'Vải cotton', word2: 'Vải lụa', hint: 'Vật liệu' },
+  { word1: 'Da thật', word2: 'Da giả', hint: 'Vật liệu' },
 
-  // =Mục 23: Nội thất================================================
+  // =Mục 22: Nội thất================================================
   { word1: 'Ghế gỗ', word2: 'Ghế nhựa', hint: 'Nội thất' },
   { word1: 'Bàn gỗ', word2: 'Bàn kính', hint: 'Nội thất' },
   { word1: 'Tủ gỗ', word2: 'Tủ nhựa', hint: 'Nội thất' },
@@ -539,17 +631,22 @@ export const vietnameseWordPairs: WordPair[] = [
   { word1: 'Ghế xoay', word2: 'Ghế tựa', hint: 'Nội thất' },
   { word1: 'Bàn làm việc', word2: 'Bàn học', hint: 'Nội thất' },
   { word1: 'Ghế sofa da', word2: 'Ghế sofa vải', hint: 'Nội thất' },
+  { word1: 'Giường gỗ', word2: 'Giường sắt', hint: 'Nội thất' },
+  { word1: 'Tủ lạnh 2 cánh', word2: 'Tủ lạnh 1 cánh', hint: 'Nội thất' },
 
-  // =Mục 24: Cây cối=================================================
-  { word1: 'Cây xoài', word2: 'Cây mít', hint: 'Cây cối' },
+  // =Mục 23: Cây cối=================================================
+  { word1: 'Cây xoài', word2: 'Cây mít', hint: 'Cây ăn trái' },
   { word1: 'Cây dừa', word2: 'Cây cọ', hint: 'Cây cối' },
   { word1: 'Cây tre', word2: 'Cây trúc', hint: 'Cây cối' },
-  { word1: 'Cây bàng', word2: 'Cây phượng', hint: 'Cây cối' },
-  { word1: 'Cây mai', word2: 'Cây đào', hint: 'Cây cối' },
-  { word1: 'Cây hoa hồng', word2: 'Cây hoa cúc', hint: 'Cây cối' },
+  { word1: 'Cây bàng', word2: 'Cây phượng', hint: 'Cây cảnh' },
+  { word1: 'Cây mai', word2: 'Cây đào', hint: 'Cây cảnh' },
+  { word1: 'Cây hoa hồng', word2: 'Cây hoa cúc', hint: 'Cây hoa' },
   { word1: 'Cây thông', word2: 'Cây tùng', hint: 'Cây cối' },
+  { word1: 'Cây sồi', word2: 'Cây gụ', hint: 'Cây gỗ' },
+  { word1: 'Cây xương rồng', word2: 'Cây sen đá', hint: 'Cây cảnh' },
+  { word1: 'Cây lúa', word2: 'Cây ngô', hint: 'Cây lương thực' },
 
-  // =Mục 25: Hoa=====================================================
+  // =Mục 24: Hoa=====================================================
   { word1: 'Hoa hồng', word2: 'Hoa cúc', hint: 'Hoa' },
   { word1: 'Hoa lan', word2: 'Hoa ly', hint: 'Hoa' },
   { word1: 'Hoa mai', word2: 'Hoa đào', hint: 'Hoa' },
@@ -557,21 +654,125 @@ export const vietnameseWordPairs: WordPair[] = [
   { word1: 'Hoa tulip', word2: 'Hoa hướng dương', hint: 'Hoa' },
   { word1: 'Hoa nhài', word2: 'Hoa lài', hint: 'Hoa' },
   { word1: 'Hoa cẩm tú cầu', word2: 'Hoa mẫu đơn', hint: 'Hoa' },
-  { word1: 'Hoa giấy', word2: 'Hoa ti gôn', hint: 'Hoa' },
-];
+  { word1: 'Hoa giấy', word2: 'Hoa tigôn', hint: 'Hoa' },
+  { word1: 'Hoa đồng tiền', word2: 'Hoa cẩm chướng', hint: 'Hoa' },
+  { word1: 'Hoa huệ', word2: 'Hoa thủy tiên', hint: 'Hoa' },
+  { word1: 'Hoa lavender', word2: 'Hoa oải hương', hint: 'Hoa' },
 
-// Imposter word (all imposters get this word when Spy is disabled)
-export const IMPOSTER_WORD = 'Kẻ giả mạo'
+  // =Mục 25: Khái niệm & Trừu tượng==================================
+  { word1: 'Con người', word2: 'Robot', hint: 'Sinh vật' },
+  { word1: 'Kết hôn', word2: 'Hẹn hò', hint: 'Mối quan hệ' },
+  { word1: 'Phim', word2: 'Kịch', hint: 'Nghệ thuật' },
+  { word1: 'Truyện tranh', word2: 'Tiểu thuyết', hint: 'Sách' },
+  { word1: 'Tranh vẽ', word2: 'Nhiếp ảnh', hint: 'Nghệ thuật' },
+  { word1: 'Truyện ngắn', word2: 'Tiểu thuyết', hint: 'Văn học' },
+  { word1: 'Thơ', word2: 'Văn xuôi', hint: 'Văn học' },
+  { word1: 'Nhạc cổ điển', word2: 'Nhạc hiện đại', hint: 'Âm nhạc' },
+  { word1: 'Nghệ thuật đương đại', word2: 'Nghệ thuật cổ điển', hint: 'Nghệ thuật' },
+  { word1: 'Phật giáo', word2: 'Thiên Chúa giáo', hint: 'Tôn giáo' },
+  { word1: 'Nho giáo', word2: 'Phật giáo', hint: 'Tôn giáo' },
+  { word1: 'Đạo Hồi', word2: 'Ấn Độ giáo', hint: 'Tôn giáo' },
+  { word1: 'Triết học', word2: 'Khoa học', hint: 'Học thuật' },
+  { word1: 'Toán học', word2: 'Vật lý', hint: 'Khoa học' },
+  { word1: 'Hóa học', word2: 'Sinh học', hint: 'Khoa học' },
+  { word1: 'Lịch sử', word2: 'Địa lý', hint: 'Khoa học xã hội' },
+  { word1: 'Kinh tế', word2: 'Chính trị', hint: 'Khoa học xã hội' },
+  { word1: 'Xã hội học', word2: 'Tâm lý học', hint: 'Khoa học xã hội' },
+  { word1: 'Ngôn ngữ học', word2: 'Văn học', hint: 'Nhân văn' },
+  { word1: 'Hội họa', word2: 'Điêu khắc', hint: 'Nghệ thuật' },
+  { word1: 'Kiến trúc', word2: 'Thiết kế nội thất', hint: 'Nghệ thuật' },
+  { word1: 'Múa', word2: 'Vũ đạo', hint: 'Nghệ thuật biểu diễn' },
+  { word1: 'Opera', word2: 'Nhạc kịch', hint: 'Nghệ thuật biểu diễn' },
+  { word1: 'Xiếc', word2: 'Ảo thuật', hint: 'Nghệ thuật biểu diễn' },
+  { word1: 'Truyền hình', word2: 'Phát thanh', hint: 'Truyền thông' },
+  { word1: 'Báo chí', word2: 'Tạp chí', hint: 'Truyền thông' },
+  { word1: 'Mạng xã hội', word2: 'Diễn đàn', hint: 'Truyền thông' },
+  { word1: 'Email', word2: 'Thư tay', hint: 'Giao tiếp' },
+  { word1: 'Video call', word2: 'Gọi điện thoại', hint: 'Giao tiếp' },
+  { word1: 'Tin nhắn', word2: 'Chat', hint: 'Giao tiếp' },
+  { word1: 'Hội nghị trực tuyến', word2: 'Hội nghị trực tiếp', hint: 'Giao tiếp' },
+  { word1: 'Học online', word2: 'Học trực tiếp', hint: 'Giáo dục' },
+  { word1: 'Làm việc từ xa', word2: 'Làm việc tại văn phòng', hint: 'Công việc' },
+  { word1: 'Mua sắm online', word2: 'Mua sắm trực tiếp', hint: 'Mua sắm' },
+  { word1: 'Thanh toán tiền mặt', word2: 'Thanh toán thẻ', hint: 'Thanh toán' },
+  { word1: 'Chuyển khoản', word2: 'Rút tiền mặt', hint: 'Ngân hàng' },
+  { word1: 'Thẻ tín dụng', word2: 'Thẻ ghi nợ', hint: 'Ngân hàng' },
+  { word1: 'Tiết kiệm', word2: 'Đầu tư', hint: 'Tài chính' },
+  { word1: 'Cổ phiếu', word2: 'Trái phiếu', hint: 'Đầu tư' },
+  { word1: 'Bất động sản', word2: 'Vàng', hint: 'Đầu tư' },
+  { word1: 'Bảo hiểm nhân thọ', word2: 'Bảo hiểm y tế', hint: 'Bảo hiểm' },
+  { word1: 'Ô tô', word2: 'Xe máy', hint: 'Tài sản' },
+  { word1: 'Căn hộ', word2: 'Nhà riêng', hint: 'Bất động sản' },
+  { word1: 'Chung cư', word2: 'Biệt thự', hint: 'Bất động sản' },
+  ];
+  
+  let currentDeck: WordPair[] = [];
+  let deckIndex: number = 0;
 
-// Function to get a random word pair
-export function getRandomWordPair(): WordPair {
-  const randomIndex = Math.floor(Math.random() * vietnameseWordPairs.length)
-  return vietnameseWordPairs[randomIndex]
-}
+  /**
+   * Random số sử dụng crypto (tốt hơn Math.random)
+   */
+  function cryptoRandom(): number {
+    if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+      const array = new Uint32Array(1);
+      crypto.getRandomValues(array);
+      return array[0] / (0xffffffff + 1);
+    }
+    // Fallback về Math.random nếu không có crypto
+    return Math.random();
+  }
 
-// Function to get a random civilian word (for backward compatibility when Spy is disabled)
-export function getRandomCivilianWord(): string {
-  const wordPair = getRandomWordPair()
-  // Randomly choose word1 or word2 for civilians
-  return Math.random() < 0.5 ? wordPair.word1 : wordPair.word2
+  /**
+   * Shuffle mảng sử dụng Fisher-Yates với crypto random
+   */
+  function shuffleDeck(array: WordPair[]): WordPair[] {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(cryptoRandom() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  }
+
+  /**
+   * Lấy cặp từ ngẫu nhiên
+   * - Không lặp cho đến khi hết bộ 600+ từ
+   * - Tự động shuffle khi hết bộ
+   */
+  export function getRandomWordPair(): WordPair {
+    // Khởi tạo hoặc shuffle lại khi hết
+    if (deckIndex >= currentDeck.length) {
+      currentDeck = shuffleDeck(vietnameseWordPairs);
+      deckIndex = 0;
+    }
+    
+    const pair = currentDeck[deckIndex];
+    deckIndex++;
+    return pair;
+  }
+
+  /**
+   * Reset và shuffle lại từ đầu
+   */
+  export function resetWordDeck(): void {
+    currentDeck = shuffleDeck(vietnameseWordPairs);
+    deckIndex = 0;
+  }
+
+  /**
+   * Xem còn bao nhiêu từ chưa dùng
+   */
+  export function getRemainingWords(): number {
+    return currentDeck.length - deckIndex;
+  }
+
+  // Imposter word
+  export const IMPOSTER_WORD = 'Kẻ giả mạo';
+
+  /**
+   * Lấy từ ngẫu nhiên cho civilian
+   */
+  export function getRandomCivilianWord(): string {
+    const wordPair = getRandomWordPair();
+    return cryptoRandom() < 0.5 ? wordPair.word1 : wordPair.word2;
 }
