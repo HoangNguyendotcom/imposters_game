@@ -504,8 +504,8 @@ export default function OnlineLobbyScreen() {
         return
       }
 
-      if (data.length < 4) {
-        setError('Cần ít nhất 4 người chơi để bắt đầu game online.')
+      if (data.length < 3) {
+        setError('Cần ít nhất 3 người chơi để bắt đầu game online.')
         setStarting(false)
         return
       }
