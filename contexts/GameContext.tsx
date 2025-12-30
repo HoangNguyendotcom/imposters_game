@@ -125,7 +125,7 @@ interface GameContextType {
   revealNextPlayer: () => void
   startGame: (players?: Omit<Player, 'role' | 'word' | 'votes'>[], imposterCount?: number, spyCount?: number) => void
   endRound: () => void
-  nextPlayerTurn: () => void
+  nextPlayerTurn: (timedOut?: boolean) => void
   vote: (voterId: string, targetId: string) => void
   eliminatePlayer: (playerId: string) => void
   processElimination: () => void
