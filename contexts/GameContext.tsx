@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { getRandomCivilianWord, getRandomWordPair, IMPOSTER_WORD } from '@/data/vietnameseWords'
 import { supabase } from '@/lib/supabaseClient'
+import { SCORING } from '@/data/scoringConstants'
 
 export type GamePhase =
   | 'setup'
@@ -903,11 +904,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       if (player.role === 'civilian') {
         if (winner === 'civilians') {
           if (survived) {
-            basePoints = 100
-            breakdown.push('+100: Team won and survived')
+            basePoints = SCORING.CIVILIAN_WIN_SURVIVED
+            breakdown.push(`+${SCORING.CIVILIAN_WIN_SURVIVED}: Team won and survived`)
           } else {
-            basePoints = 50
-            breakdown.push('+50: Team won but was eliminated')
+            basePoints = SCORING.CIVILIAN_WIN_ELIMINATED
+            breakdown.push(`+${SCORING.CIVILIAN_WIN_ELIMINATED}: Team won but was eliminated`)
           }
         } else {
           basePoints = 0
@@ -919,20 +920,20 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
           .filter((v) => v.voterId === player.id)
           .forEach((vote) => {
             if (vote.targetRole === 'imposter') {
-              votingPoints += 30
-              breakdown.push(`+30: Voted for Imposter`)
+              votingPoints += SCORING.CIVILIAN_VOTE_FOR_IMPOSTER
+              breakdown.push(`+${SCORING.CIVILIAN_VOTE_FOR_IMPOSTER}: Voted for Imposter`)
             } else if (vote.targetRole === 'spy') {
-              votingPoints += 15
-              breakdown.push(`+15: Voted for Spy`)
+              votingPoints += SCORING.CIVILIAN_VOTE_FOR_SPY
+              breakdown.push(`+${SCORING.CIVILIAN_VOTE_FOR_SPY}: Voted for Spy`)
             } else if (vote.targetRole === 'civilian') {
-              votingPoints -= 10
-              breakdown.push(`-10: Voted for Civilian`)
+              votingPoints += SCORING.CIVILIAN_VOTE_FOR_CIVILIAN
+              breakdown.push(`${SCORING.CIVILIAN_VOTE_FOR_CIVILIAN}: Voted for Civilian`)
             }
           })
       } else if (player.role === 'spy') {
         if (winner === 'spy') {
-          basePoints = 150
-          breakdown.push('+150: Spy win condition met')
+          basePoints = SCORING.SPY_WIN
+          breakdown.push(`+${SCORING.SPY_WIN}: Spy win condition met`)
         } else {
           basePoints = 0
           breakdown.push('0: Spy did not win')
@@ -942,36 +943,36 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         voteHistory
           .filter((v) => v.voterId === player.id && v.targetRole === 'civilian')
           .forEach((vote) => {
-            votingPoints += 20
-            breakdown.push(`+20: Voted for Civilian`)
+            votingPoints += SCORING.SPY_VOTE_FOR_CIVILIAN
+            breakdown.push(`+${SCORING.SPY_VOTE_FOR_CIVILIAN}: Voted for Civilian`)
           })
       } else if (player.role === 'imposter') {
         if (winner === 'imposters') {
-          basePoints = 150
-          breakdown.push('+150: Guessed keyword correctly')
+          basePoints = SCORING.IMPOSTER_WIN
+          breakdown.push(`+${SCORING.IMPOSTER_WIN}: Guessed keyword correctly`)
         } else {
           basePoints = 0
           breakdown.push('0: Failed to guess keyword')
         }
 
         // Round survival points (ALWAYS awarded regardless of win/loss)
-        roundSurvivalPoints = roundsSurvived * 30
+        roundSurvivalPoints = roundsSurvived * SCORING.IMPOSTER_ROUND_SURVIVAL
         if (roundSurvivalPoints > 0) {
           breakdown.push(`+${roundSurvivalPoints}: Survived ${roundsSurvived} round(s)`)
         }
 
-        // Voting bonus for voting for civilians
+        // Voting bonus for voting for spies
         voteHistory
-          .filter((v) => v.voterId === player.id && v.targetRole === 'civilian')
+          .filter((v) => v.voterId === player.id && v.targetRole === 'spy')
           .forEach((vote) => {
-            votingPoints += 20
-            breakdown.push(`+20: Voted for Civilian`)
+            votingPoints += SCORING.IMPOSTER_VOTE_FOR_SPY
+            breakdown.push(`+${SCORING.IMPOSTER_VOTE_FOR_SPY}: Voted for Spy`)
           })
       }
 
       // Timeout penalty
       const timeoutCount = gameState.timeoutHistory.filter(t => t.playerId === player.id).length
-      const timeoutPenalty = timeoutCount * -5
+      const timeoutPenalty = timeoutCount * SCORING.TIMEOUT_PENALTY
 
       if (timeoutPenalty < 0) {
         breakdown.push(`${timeoutPenalty}: Ran out of time (${timeoutCount}x)`)

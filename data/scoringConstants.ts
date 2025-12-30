@@ -1,0 +1,20 @@
+export const SCORING = {
+  // Civilian points
+  CIVILIAN_WIN_SURVIVED: 100,
+  CIVILIAN_WIN_ELIMINATED: 50,
+  CIVILIAN_VOTE_FOR_IMPOSTER: 20,
+  CIVILIAN_VOTE_FOR_SPY: 20,
+  CIVILIAN_VOTE_FOR_CIVILIAN: -25,
+
+  // Imposter points
+  IMPOSTER_WIN: 150,
+  IMPOSTER_ROUND_SURVIVAL: 15,
+  IMPOSTER_VOTE_FOR_SPY: 20,  // Changed from Civilian to Spy
+
+  // Spy points
+  SPY_WIN: 150,
+  SPY_VOTE_FOR_CIVILIAN: 20,
+
+  // Penalties
+  TIMEOUT_PENALTY: -5,
+}

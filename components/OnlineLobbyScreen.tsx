@@ -611,7 +611,7 @@ export default function OnlineLobbyScreen() {
                           <button
                             type="button"
                             onClick={() => handleKickPlayer(p.id, p.name)}
-                            className="ml-2 text-red-400 hover:text-red-300 text-xs px-2 py-0.5 rounded bg-red-900/30 hover:bg-red-900/50 border border-red-500/30 transition-colors"
+                            className="ml-2 text-red-400 hover:text-red-300 text-sm px-3 py-1 rounded bg-red-900/30 hover:bg-red-900/50 border border-red-500/30 transition-colors"
                           >
                             Kick
                           </button>
