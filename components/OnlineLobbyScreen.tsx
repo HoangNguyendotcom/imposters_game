@@ -39,6 +39,7 @@ export default function OnlineLobbyScreen() {
     setGameMode,
     setOnlineInfo,
     clearOnlineInfo,
+    deleteRoomFromSupabase,
     setPlayerCount,
     setPlayers,
   } = useGame()
@@ -485,6 +486,29 @@ export default function OnlineLobbyScreen() {
     }
   }
 
+  const handleCloseRoom = async () => {
+    if (!roomId || !gameState.isHost) return
+
+    try {
+      const confirmed = confirm('Bạn có chắc muốn đóng phòng? Tất cả người chơi sẽ bị kick.')
+      if (!confirmed) return
+
+      // Delete the entire room
+      await deleteRoomFromSupabase()
+
+      // Clear local state
+      clearOnlineInfo()
+      setRoomId(null)
+      setLobbyPlayers([])
+      setView('choose')
+
+      console.log('[handleCloseRoom] Room closed successfully')
+    } catch (err) {
+      console.error('[handleCloseRoom] Exception:', err)
+      setError('Có lỗi khi đóng phòng')
+    }
+  }
+
   const handleStartGameAsHost = async () => {
     if (!roomId || !gameState.isHost) return
 
@@ -622,14 +646,23 @@ export default function OnlineLobbyScreen() {
                 )}
 
                 {gameState.isHost ? (
-                  <button
-                    type="button"
-                    onClick={handleStartGameAsHost}
-                    disabled={starting || players.length < 3}
-                    className="mt-4 w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-2.5 px-4 rounded-lg text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {starting ? 'Starting...' : 'Start Game...'}
-                  </button>
+                  <div className="mt-4 space-y-2">
+                    <button
+                      type="button"
+                      onClick={handleStartGameAsHost}
+                      disabled={starting || players.length < 3}
+                      className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-2.5 px-4 rounded-lg text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {starting ? 'Starting...' : 'Start Game...'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleCloseRoom}
+                      className="w-full bg-red-500/80 hover:bg-red-500 text-white font-semibold py-2.5 px-4 rounded-lg text-sm transition-all border border-red-400/50"
+                    >
+                      Close Room
+                    </button>
+                  </div>
                 ) : (
                   <button
                     type="button"

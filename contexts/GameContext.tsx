@@ -116,6 +116,7 @@ interface GameContextType {
   setOnlineInfo: (info: { roomId: string; roomCode: string; isHost: boolean; myName: string }) => void
   clearOnlineInfo: () => void
   quitRoom: () => Promise<void>
+  deleteRoomFromSupabase: () => Promise<void>
   setPlayerCount: (count: number) => void
   setRoundDuration: (duration: number) => void
   setImposterCount: (count: number) => void
@@ -347,6 +348,46 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       console.log('[quitRoom] Player has quit the room, returned to setup screen')
     } catch (err) {
       console.error('[quitRoom] Exception:', err)
+    }
+  }
+
+  const deleteRoomFromSupabase = async () => {
+    if (!gameState.roomId || !gameState.isHost) {
+      console.log('[deleteRoomFromSupabase] Not host or no room')
+      return
+    }
+
+    try {
+      console.log('[deleteRoomFromSupabase] Deleting room:', gameState.roomId)
+
+      // Delete related data (explicit cleanup)
+      // 1. Delete player_roles
+      await supabase.from('player_roles').delete().eq('room_id', gameState.roomId)
+      console.log('[deleteRoomFromSupabase] Deleted player_roles')
+
+      // 2. Delete votes
+      await supabase.from('votes').delete().eq('room_id', gameState.roomId)
+      console.log('[deleteRoomFromSupabase] Deleted votes')
+
+      // 3. Delete room_state
+      await supabase.from('room_state').delete().eq('room_id', gameState.roomId)
+      console.log('[deleteRoomFromSupabase] Deleted room_state')
+
+      // 4. Delete room_players
+      await supabase.from('room_players').delete().eq('room_id', gameState.roomId)
+      console.log('[deleteRoomFromSupabase] Deleted room_players')
+
+      // 5. Delete room itself
+      const { error: roomError } = await supabase.from('rooms').delete().eq('id', gameState.roomId)
+      if (roomError) {
+        console.error('[deleteRoomFromSupabase] Error deleting room:', roomError)
+        throw roomError
+      }
+
+      console.log('[deleteRoomFromSupabase] Room deleted successfully')
+    } catch (error) {
+      console.error('[deleteRoomFromSupabase] Error:', error)
+      throw error
     }
   }
 
@@ -1839,6 +1880,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         setOnlineInfo,
         clearOnlineInfo,
         quitRoom,
+        deleteRoomFromSupabase,
         setPlayerCount,
         setRoundDuration,
         setImposterCount,
