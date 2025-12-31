@@ -946,6 +946,14 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
             votingPoints += SCORING.SPY_VOTE_FOR_CIVILIAN
             breakdown.push(`+${SCORING.SPY_VOTE_FOR_CIVILIAN}: Voted for Civilian`)
           })
+
+        // Penalty for voting for spy
+        voteHistory
+          .filter((v) => v.voterId === player.id && v.targetRole === 'spy')
+          .forEach((vote) => {
+            votingPoints += SCORING.SPY_VOTE_FOR_SPY
+            breakdown.push(`${SCORING.SPY_VOTE_FOR_SPY}: Voted for Spy`)
+          })
       } else if (player.role === 'imposter') {
         if (winner === 'imposters') {
           basePoints = SCORING.IMPOSTER_WIN
@@ -967,6 +975,14 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
           .forEach((vote) => {
             votingPoints += SCORING.IMPOSTER_VOTE_FOR_SPY
             breakdown.push(`+${SCORING.IMPOSTER_VOTE_FOR_SPY}: Voted for Spy`)
+          })
+
+        // Penalty for voting for imposter
+        voteHistory
+          .filter((v) => v.voterId === player.id && v.targetRole === 'imposter')
+          .forEach((vote) => {
+            votingPoints += SCORING.IMPOSTER_VOTE_FOR_IMPOSTER
+            breakdown.push(`${SCORING.IMPOSTER_VOTE_FOR_IMPOSTER}: Voted for Imposter`)
           })
       }
 
