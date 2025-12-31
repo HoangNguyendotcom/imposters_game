@@ -593,7 +593,14 @@ export default function OnlineLobbyScreen() {
             </button>
 
             {roomId && (
-              <div className="mt-6 bg-black/20 border border-white/20 rounded-lg p-4">
+              <div className="mt-6 bg-black/20 border border-white/20 rounded-lg p-4 relative">
+                <button
+                  type="button"
+                  onClick={gameState.isHost ? handleCloseRoom : handleQuitRoom}
+                  className="absolute top-3 right-3 px-3 py-1.5 text-xs bg-red-500/80 hover:bg-red-500 text-white rounded-lg border border-red-400/50 transition-all"
+                >
+                  {gameState.isHost ? 'Close Room' : 'Rời phòng'}
+                </button>
                 <p className="text-sm text-white/70 mb-2">Current online session:</p>
                 {gameState.roomCode && (
                   <p className="text-xs text-emerald-300 mb-2">
@@ -645,31 +652,14 @@ export default function OnlineLobbyScreen() {
                   </ul>
                 )}
 
-                {gameState.isHost ? (
-                  <div className="mt-4 space-y-2">
-                    <button
-                      type="button"
-                      onClick={handleStartGameAsHost}
-                      disabled={starting || players.length < 3}
-                      className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-2.5 px-4 rounded-lg text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {starting ? 'Starting...' : 'Start Game...'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleCloseRoom}
-                      className="w-full bg-red-500/80 hover:bg-red-500 text-white font-semibold py-2.5 px-4 rounded-lg text-sm transition-all border border-red-400/50"
-                    >
-                      Close Room
-                    </button>
-                  </div>
-                ) : (
+                {gameState.isHost && (
                   <button
                     type="button"
-                    onClick={handleQuitRoom}
-                    className="mt-4 w-full bg-red-500/80 hover:bg-red-500 text-white font-semibold py-2.5 px-4 rounded-lg text-sm transition-all border border-red-400/50"
+                    onClick={handleStartGameAsHost}
+                    disabled={starting || players.length < 3}
+                    className="mt-4 w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-2.5 px-4 rounded-lg text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Rời phòng
+                    {starting ? 'Starting...' : 'Start Game...'}
                   </button>
                 )}
               </div>
