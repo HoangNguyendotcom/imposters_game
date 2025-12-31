@@ -426,31 +426,25 @@ export const vietnameseWordPairs: WordPair[] = [
   { word1: 'iPhone', word2: 'Samsung', hint: 'Thiết bị' },
   { word1: 'Laptop', word2: 'Tablet', hint: 'Thiết bị' },
   { word1: 'Desktop', word2: 'Laptop', hint: 'Thiết bị' },
-  { word1: 'Macbook', word2: 'Laptop Dell', hint: 'Thiết bị' },
   { word1: 'Kindle', word2: 'Máy tính bảng', hint: 'Thiết bị' },
   
   // =Mục 40: Thiết bị nghe nhìn=====================================
   { word1: 'Tivi', word2: 'Radio', hint: 'Thiết bị' },
   { word1: 'Loa', word2: 'Tai nghe', hint: 'Thiết bị' },
   { word1: 'Micro', word2: 'Loa', hint: 'Thiết bị' },
-  { word1: 'Máy chiếu', word2: 'Màn chiếu', hint: 'Thiết bị' },
   { word1: 'Đầu đĩa', word2: 'Dàn âm thanh', hint: 'Thiết bị' },
   { word1: 'Máy nghe nhạc', word2: 'Máy ghi âm', hint: 'Thiết bị' },
-  { word1: 'Loa thông minh', word2: 'Trợ lý ảo', hint: 'Thiết bị' },
   
   // =Mục 41: Thiết bị ngoại vi======================================
   { word1: 'Bàn phím', word2: 'Chuột máy tính', hint: 'Thiết bị' },
   { word1: 'USB', word2: 'Ổ cứng', hint: 'Thiết bị' },
-  { word1: 'Thẻ nhớ', word2: 'Đầu đọc thẻ', hint: 'Thiết bị' },
+  { word1: 'Thẻ nhớ', word2: 'Cuộn phim', hint: 'Thiết bị' },
   { word1: 'Máy in', word2: 'Máy scan', hint: 'Thiết bị' },
   
   // =Mục 42: Điều khiển & Kết nối===================================
   { word1: 'Wifi', word2: 'Bluetooth', hint: 'Công nghệ' },
   { word1: 'Điều khiển tivi', word2: 'Điều khiển điều hòa', hint: 'Thiết bị' },
-  
-  // =Mục 43: Thiết bị giải trí======================================
-  { word1: 'Máy chơi game', word2: 'Tay cầm chơi game', hint: 'Thiết bị' },
-  
+
   // =Mục 44: Thiết bị điện=========================================
   { word1: 'Máy phát điện', word2: 'Pin dự phòng', hint: 'Thiết bị' },
   
@@ -461,14 +455,14 @@ export const vietnameseWordPairs: WordPair[] = [
   // =Mục 45: Thể thao đồng đội======================================
   { word1: 'Bóng đá', word2: 'Bóng chày', hint: 'Thể thao' },
   { word1: 'Bóng chuyền', word2: 'Bóng rổ', hint: 'Thể thao' },
-  { word1: 'Bóng chày', word2: 'Bóng đá', hint: 'Thể thao' },
+  { word1: 'Bóng chuyền', word2: 'Cầu lông', hint: 'Thể thao' },
   
   // =Mục 46: Thể thao cá nhân=======================================
   { word1: 'Bơi lội', word2: 'Chạy bộ', hint: 'Thể thao' },
   { word1: 'Quần vợt', word2: 'Bóng bàn', hint: 'Thể thao' },
-  { word1: 'Điền kinh', word2: 'Bơi lội', hint: 'Thể thao' },
+  { word1: 'Chạy nước rút', word2: 'Chạy bền', hint: 'Thể thao' },
   { word1: 'Nhảy xa', word2: 'Nhảy cao', hint: 'Thể thao' },
-  { word1: 'Đấu kiếm', word2: 'Bắn súng', hint: 'Thể thao' },
+  { word1: 'Đấu kiếm', word2: 'Đấu vật', hint: 'Thể thao' },
   { word1: 'Bắn cung', word2: 'Bắn súng', hint: 'Thể thao' },
   { word1: 'Đua xe đạp', word2: 'Đua mô tô', hint: 'Thể thao' },
   { word1: 'Lướt ván', word2: 'Trượt tuyết', hint: 'Thể thao' },
@@ -476,23 +470,19 @@ export const vietnameseWordPairs: WordPair[] = [
   { word1: 'Nhảy cầu', word2: 'Bơi', hint: 'Thể thao' },
   { word1: 'Yoga', word2: 'Gym', hint: 'Thể thao' },
   { word1: 'Bi-a', word2: 'Bowling', hint: 'Thể thao' },
-  { word1: 'Leo núi', word2: 'Trekking', hint: 'Thể thao' },
   
   // =Mục 47: Võ thuật===============================================
-  { word1: 'Taekwondo', word2: 'Karate', hint: 'Võ thuật' },
+  { word1: 'Muay Thái', word2: 'Karate', hint: 'Võ thuật' },
   { word1: 'Boxing', word2: 'Karate', hint: 'Võ thuật' },
   { word1: 'Muay Thái', word2: 'Judo', hint: 'Võ thuật' },
-  { word1: 'Đấu vật', word2: 'MMA', hint: 'Võ thuật' },
+  { word1: 'Đấu vật', word2: 'Taekwondo', hint: 'Võ thuật' },
   
   // =Mục 48: Dụng cụ thể thao=======================================
-  { word1: 'Quả bóng đá', word2: 'Quả bóng rổ', hint: 'Thể thao' },
-  { word1: 'Vợt tennis', word2: 'Vợt cầu lông', hint: 'Thể thao' },
-  { word1: 'Gậy golf', word2: 'Gậy bóng chày', hint: 'Thể thao' },
   { word1: 'Khung thành', word2: 'Rổ bóng', hint: 'Thể thao' },
   { word1: 'Mũ bơi', word2: 'Kính bơi', hint: 'Thể thao' },
   
   // =Mục 49: Cờ & Trò chơi==========================================
-  { word1: 'Cờ vua', word2: 'Cờ tướng', hint: 'Trò chơi' },
+  { word1: 'Cờ vua', word2: 'Cờ vây', hint: 'Trò chơi' },
   
   // ============================================================
   // PHẦN X: ÂM NHẠC & NGHỆ THUẬT
@@ -591,7 +581,7 @@ export const vietnameseWordPairs: WordPair[] = [
   // =Mục 63: Nghề thủ công==========================================
   { word1: 'Thợ xây', word2: 'Thợ điện', hint: 'Nghề nghiệp' },
   { word1: 'Thợ mộc', word2: 'Thợ hàn', hint: 'Nghề nghiệp' },
-  { word1: 'Thợ sơn', word2: 'Thợ nề', hint: 'Nghề nghiệp' },
+  { word1: 'Thợ sơn', word2: 'Thợ xây', hint: 'Nghề nghiệp' },
   { word1: 'Thợ cắt tóc', word2: 'Thợ làm móng', hint: 'Nghề nghiệp' },
   { word1: 'Thợ may', word2: 'Thợ thêu', hint: 'Nghề nghiệp' },
   
@@ -607,8 +597,8 @@ export const vietnameseWordPairs: WordPair[] = [
   { word1: 'Bảo vệ', word2: 'Công an', hint: 'Nghề nghiệp' },
   
   // =Mục 66: Nghề nghệ thuật=========================================
-  { word1: 'Ca sĩ', word2: 'Diễn viên', hint: 'Nghề nghiệp' },
-  { word1: 'Họa sĩ', word2: 'Nhạc sĩ', hint: 'Nghề nghiệp' },
+  { word1: 'Đạo diễn', word2: 'Diễn viên', hint: 'Nghề nghiệp' },
+  { word1: 'Đạo diễn', word2: 'Biên kịch', hint: 'Nghề nghiệp' },
   { word1: 'Nhiếp ảnh', word2: 'Quay phim', hint: 'Nghề nghiệp' },
   
   // =Mục 67: Nghề nông nghiệp & thủy sản============================
