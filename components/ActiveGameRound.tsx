@@ -7,6 +7,7 @@ import { useOnlineSyncWithStateUpdate } from '@/hooks/useOnlineSync'
 export default function ActiveGameRound() {
   const { gameState, nextPlayerTurn, updatePlayerTurnTimer, resetToRevealRoles, quitRoom } = useGame()
   const [playerTimer, setPlayerTimer] = useState(gameState.playerTurnTimer)
+  const [showWord, setShowWord] = useState(false)
 
   // Subscribe to state changes in online mode
   useOnlineSyncWithStateUpdate()
@@ -77,6 +78,31 @@ export default function ActiveGameRound() {
           </button>
         )}
 
+        {/* My Word button at top center */}
+        {isOnlineMode && (gameState.myWord || gameState.myRole === 'imposter') && (
+          <button
+            type="button"
+            onClick={() => setShowWord(!showWord)}
+            className="fixed top-3 left-1/2 -translate-x-1/2 z-30 rounded-full bg-purple-500/40 border border-purple-400/40 text-white text-sm px-4 py-2 shadow-lg backdrop-blur-md hover:bg-purple-500/60 transition-all"
+          >
+            {showWord ? 'Hide Word' : 'My Word'}
+          </button>
+        )}
+
+        {/* Word popup */}
+        {isOnlineMode && showWord && (
+          <div className="fixed top-14 left-1/2 -translate-x-1/2 z-30 bg-black/80 backdrop-blur-md rounded-lg p-4 border border-white/20 shadow-xl text-center">
+            {gameState.myRole === 'imposter' ? (
+              <p className="text-red-400 text-lg font-bold">You are Imposter!</p>
+            ) : (
+              <>
+                <p className="text-white/70 text-xs mb-1">Your word:</p>
+                <p className="text-white text-xl font-bold">{gameState.myWord}</p>
+              </>
+            )}
+          </div>
+        )}
+
         <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl p-8 md:p-12 max-w-md w-full border border-white/20">
           <div className="text-center mb-6">
             <div className="text-6xl mb-4">👻</div>
@@ -131,6 +157,31 @@ export default function ActiveGameRound() {
         >
           Quit Room
         </button>
+      )}
+
+      {/* My Word button at top center */}
+      {isOnlineMode && (gameState.myWord || gameState.myRole === 'imposter') && (
+        <button
+          type="button"
+          onClick={() => setShowWord(!showWord)}
+          className="fixed top-3 left-1/2 -translate-x-1/2 z-30 rounded-full bg-purple-500/40 border border-purple-400/40 text-white text-sm px-4 py-2 shadow-lg backdrop-blur-md hover:bg-purple-500/60 transition-all"
+        >
+          {showWord ? 'Hide Word' : 'My Word'}
+        </button>
+      )}
+
+      {/* Word popup */}
+      {isOnlineMode && showWord && (
+        <div className="fixed top-14 left-1/2 -translate-x-1/2 z-30 bg-black/80 backdrop-blur-md rounded-lg p-4 border border-white/20 shadow-xl text-center">
+          {gameState.myRole === 'imposter' ? (
+            <p className="text-red-400 text-lg font-bold">You are Imposter!</p>
+          ) : (
+            <>
+              <p className="text-white/70 text-xs mb-1">Your word:</p>
+              <p className="text-white text-xl font-bold">{gameState.myWord}</p>
+            </>
+          )}
+        </div>
       )}
 
       <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl p-8 md:p-12 max-w-md w-full border border-white/20">
