@@ -49,23 +49,53 @@ export default function ResultsScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOnlineMode, isHost, resultSaved])
 
-  // Non-host players: Fetch game results from Supabase
+  // Non-host players: Fetch game results from Supabase (with retry logic)
   useEffect(() => {
-    if (isOnlineMode && !isHost && !loadingResults && fetchedPointsBreakdown.length === 0) {
+    if (isOnlineMode && !isHost && !loadingResults && fetchedPointsBreakdown.length === 0 && winner) {
+      // Only start fetching after winner is synced (means host finished calculating)
       setLoadingResults(true)
+
+      let retryCount = 0
+      const maxRetries = 10
+
       const fetchResults = async () => {
         const history = await loadRoomGameHistory()
         if (history && history.length > 0) {
           // Get the most recent game result
           const latestResult = history[0]
-          setFetchedPointsBreakdown(latestResult.player_results || [])
-          console.log('[ResultsScreen] Non-host fetched game results:', latestResult.player_results)
+
+          // Verify the result matches current game (same winner)
+          if (latestResult.winner === winner && latestResult.player_results && latestResult.player_results.length > 0) {
+            setFetchedPointsBreakdown(latestResult.player_results)
+            console.log('[ResultsScreen] Non-host fetched game results:', {
+              winner: latestResult.winner,
+              playerCount: latestResult.player_results.length,
+              players: latestResult.player_results.map(p => ({ name: p.playerName, role: p.role, points: p.totalPoints }))
+            })
+            setLoadingResults(false)
+          } else if (retryCount < maxRetries) {
+            // Results not ready yet, retry
+            retryCount++
+            console.log(`[ResultsScreen] Results not ready, retrying (${retryCount}/${maxRetries})...`)
+            setTimeout(fetchResults, 500) // Retry after 500ms
+          } else {
+            console.error('[ResultsScreen] Failed to fetch results after max retries')
+            setLoadingResults(false)
+          }
+        } else if (retryCount < maxRetries) {
+          // No results yet, retry
+          retryCount++
+          console.log(`[ResultsScreen] No results found, retrying (${retryCount}/${maxRetries})...`)
+          setTimeout(fetchResults, 500) // Retry after 500ms
+        } else {
+          console.error('[ResultsScreen] Failed to fetch results after max retries')
+          setLoadingResults(false)
         }
-        setLoadingResults(false)
       }
+
       fetchResults()
     }
-  }, [isOnlineMode, isHost, loadingResults, fetchedPointsBreakdown, loadRoomGameHistory])
+  }, [isOnlineMode, isHost, loadingResults, fetchedPointsBreakdown, winner, loadRoomGameHistory])
 
   // Reset flag when leaving results screen (phase changes)
   useEffect(() => {
