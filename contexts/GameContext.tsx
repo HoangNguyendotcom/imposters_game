@@ -1460,10 +1460,10 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         .select('role, word, player_id')
         .eq('room_id', gameState.roomId)
         .eq('client_id', gameState.myClientId)
-        .single()
+        .maybeSingle()
 
       if (error) {
-        console.error('Error fetching role:', error)
+        console.error('[fetchMyRole] Error fetching role:', error)
         throw error
       }
 
@@ -1479,9 +1479,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
           myWord: data.word,
           myPlayerId: data.player_id,
         }))
+      } else {
+        console.log('[fetchMyRole] No role found yet for this client - roles may not be assigned')
       }
     } catch (error) {
-      console.error('Error fetching my role:', error)
+      console.error('[fetchMyRole] Error:', error)
     }
   }, [gameState.roomId, gameState.myClientId])
 
@@ -1827,9 +1829,14 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         // Sync state from Supabase (works for both host and non-host)
         await syncStateFromSupabase(gameState.isHost)
 
-        // Fetch role if needed
-        if (!gameState.myRole && gameState.phase === 'reveal-roles') {
-          await fetchMyRole()
+        // Fetch role if needed (only in reveal-roles or later phases)
+        if (!gameState.myRole && (gameState.phase === 'reveal-roles' || gameState.phase === 'playing' || gameState.phase === 'voting')) {
+          try {
+            await fetchMyRole()
+          } catch (error) {
+            // Silently ignore - role might not be assigned yet
+            console.log('[Visibility] Role not available yet, will retry on next sync')
+          }
         }
 
         console.log('[Visibility] State synced successfully')
