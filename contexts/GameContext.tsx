@@ -659,6 +659,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
           spyCount: finalSpyCount,
           eliminatedPlayerId: null,
           imposterGuessedCorrectly: false,
+          winner: null, // Clear winner for new game
           players: players.map(p => ({
             id: p.id,
             name: p.name,
@@ -675,7 +676,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
           spyWord,
           imposterHint,
           voteHistoryLength: 0,
-          eliminationHistoryLength: 0
+          eliminationHistoryLength: 0,
+          playersCount: players.length,
+          playerIds: players.map(p => p.id)
         })
 
         await supabase
@@ -1090,7 +1093,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     }))
   }
 
-  const resetToRevealRoles = () => {
+  const resetToRevealRoles = async () => {
     console.log('[resetToRevealRoles] Called - preparing to reassign roles with NEW words')
     console.log('[resetToRevealRoles] Current state before reset:', {
       civilianWord: gameState.civilianWord,
@@ -1098,22 +1101,65 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       imposterHint: gameState.imposterHint,
       voteHistoryLength: gameState.voteHistory.length,
       eliminationHistoryLength: gameState.eliminationHistory.length,
+      playersCount: gameState.players.length,
+      originalPlayersCount: gameState.originalPlayers.length,
     })
 
-    // Restore original players and reassign roles, then go to reveal-roles phase
-    const playersToRestore = gameState.originalPlayers.length > 0
-      ? gameState.originalPlayers
-      : gameState.players.map((p) => ({ id: p.id, name: p.name }))
+    let playersToRestore: Omit<Player, 'role' | 'word' | 'votes'>[]
+
+    // In online mode, fetch ALL current players from room_players (including new joiners)
+    if (gameState.mode === 'online' && gameState.roomId) {
+      console.log('[resetToRevealRoles] Online mode - fetching all players from room_players')
+      const { data: roomPlayers, error } = await supabase
+        .from('room_players')
+        .select('id, name')
+        .eq('room_id', gameState.roomId)
+        .order('joined_at', { ascending: true })
+
+      if (error) {
+        console.error('[resetToRevealRoles] Error fetching room players:', error)
+        // Fallback to originalPlayers
+        playersToRestore = gameState.originalPlayers.length > 0
+          ? gameState.originalPlayers
+          : gameState.players.map((p) => ({ id: p.id, name: p.name }))
+      } else if (roomPlayers && roomPlayers.length > 0) {
+        playersToRestore = roomPlayers.map(p => ({ id: p.id, name: p.name }))
+        console.log('[resetToRevealRoles] Fetched players from room_players:', {
+          count: playersToRestore.length,
+          players: playersToRestore.map(p => p.name)
+        })
+      } else {
+        // Fallback
+        playersToRestore = gameState.originalPlayers.length > 0
+          ? gameState.originalPlayers
+          : gameState.players.map((p) => ({ id: p.id, name: p.name }))
+      }
+    } else {
+      // Offline mode: use originalPlayers
+      playersToRestore = gameState.originalPlayers.length > 0
+        ? gameState.originalPlayers
+        : gameState.players.map((p) => ({ id: p.id, name: p.name }))
+    }
+
+    console.log('[resetToRevealRoles] Restoring players:', {
+      count: playersToRestore.length,
+      players: playersToRestore.map(p => ({ id: p.id, name: p.name }))
+    })
 
     // Clean up old votes before reassigning (player_roles is cleaned in assignRoles)
     if (gameState.mode === 'online' && gameState.roomId && gameState.isHost) {
-      supabase.from('votes').delete().eq('room_id', gameState.roomId).then(() => {
-        console.log('[resetToRevealRoles] Cleaned up old votes')
-      })
+      await supabase.from('votes').delete().eq('room_id', gameState.roomId)
+      console.log('[resetToRevealRoles] Cleaned up old votes')
     }
 
+    // Clear winner before reassigning to prevent stale state
+    setGameState((prev) => ({
+      ...prev,
+      winner: undefined,
+    }))
+
     // Reassign roles with the restored players - this generates NEW words and resets vote/elimination history
-    assignRoles(playersToRestore, gameState.imposterCount, gameState.spyCount)
+    await assignRoles(playersToRestore, gameState.imposterCount, gameState.spyCount)
   }
 
   const playAgain = () => {

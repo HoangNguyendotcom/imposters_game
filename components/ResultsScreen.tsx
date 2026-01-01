@@ -70,7 +70,7 @@ export default function ResultsScreen() {
             console.log('[ResultsScreen] Non-host fetched game results:', {
               winner: latestResult.winner,
               playerCount: latestResult.player_results.length,
-              players: latestResult.player_results.map(p => ({ name: p.playerName, role: p.role, points: p.totalPoints }))
+              players: latestResult.player_results.map((p: any) => ({ name: p.playerName, role: p.role, points: p.totalPoints }))
             })
             setLoadingResults(false)
           } else if (retryCount < maxRetries) {
