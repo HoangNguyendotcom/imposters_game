@@ -93,16 +93,16 @@ export default function VotingScreen() {
     }
   }, [isOnlineMode, gameState.roomId, gameState.currentRound, gameState.myClientId])
 
-  // Check if all players have voted (online mode)
+  // Check if all players have voted (online mode - for all players)
   useEffect(() => {
-    if (!isOnlineMode || !gameState.isHost) return
+    if (!isOnlineMode) return
 
     const allVoted = voteCount === gameState.players.length
     if (allVoted && !votingComplete) {
       setVotingComplete(true)
       setShowVoteResults(true)
     }
-  }, [isOnlineMode, gameState.isHost, voteCount, gameState.players.length, votingComplete])
+  }, [isOnlineMode, voteCount, gameState.players.length, votingComplete])
 
   const handleVoteClick = (targetId: string) => {
     if (isOnlineMode) {

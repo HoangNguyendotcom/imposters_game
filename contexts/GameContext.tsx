@@ -1701,7 +1701,13 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   // Save online session to localStorage (for resume after refresh)
   const saveOnlineSession = useCallback(() => {
-    if (gameState.mode !== 'online' || !gameState.roomId) return
+    if (gameState.mode !== 'online' || !gameState.roomId || !gameState.myClientId) {
+      // Don't save if we don't have critical data (roomId or clientId)
+      if (gameState.mode === 'online' && gameState.roomId && !gameState.myClientId) {
+        console.log('[saveOnlineSession] Skipping save - myClientId not initialized yet')
+      }
+      return
+    }
 
     const session = {
       roomId: gameState.roomId,
@@ -1728,6 +1734,13 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
       const session = JSON.parse(stored)
       console.log('[restoreOnlineSession] Found saved session:', session)
+
+      // Validate session has required fields
+      if (!session.myClientId || !session.roomId) {
+        console.log('[restoreOnlineSession] Session invalid - missing myClientId or roomId')
+        localStorage.removeItem(ONLINE_SESSION_KEY)
+        return false
+      }
 
       // Check if session is still valid (not older than 24 hours)
       const hoursSinceLastSave = (Date.now() - session.timestamp) / (1000 * 60 * 60)
