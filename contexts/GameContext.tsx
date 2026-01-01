@@ -1074,6 +1074,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   const continueAfterTie = () => {
     // Reset votes and continue playing after a tie
+    // Increment currentRound so the next vote uses a new round_number in Supabase
+    // This preserves vote history for scoring while allowing players to vote again
     setGameState((prev) => ({
       ...prev,
       phase: 'playing',
@@ -1084,6 +1086,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       })),
       currentPlayerIndex: 0,
       playerTurnTimer: prev.roundDuration,
+      currentRound: prev.currentRound + 1,
     }))
   }
 
