@@ -273,16 +273,18 @@ export default function ResultsScreen() {
                       </div>
 
                       {/* Expandable breakdown */}
-                      <details className="text-sm text-white/70">
-                        <summary className="cursor-pointer hover:text-white/90">
-                          View breakdown
-                        </summary>
-                        <ul className="mt-2 space-y-1 pl-4">
-                          {player.breakdown.map((item: string, i: number) => (
-                            <li key={i}>{item}</li>
-                          ))}
-                        </ul>
-                      </details>
+                      {player.breakdown && player.breakdown.length > 0 && (
+                        <details className="text-sm text-white/70">
+                          <summary className="cursor-pointer hover:text-white/90">
+                            View breakdown
+                          </summary>
+                          <ul className="mt-2 space-y-1 pl-4">
+                            {player.breakdown.map((item: string, i: number) => (
+                              <li key={i}>{item}</li>
+                            ))}
+                          </ul>
+                        </details>
+                      )}
                     </div>
                   )
                 })}
@@ -394,16 +396,18 @@ export default function ResultsScreen() {
                   </div>
 
                   {/* Expandable breakdown */}
-                  <details className="text-sm text-white/70">
-                    <summary className="cursor-pointer hover:text-white/90">
-                      View breakdown
-                    </summary>
-                    <ul className="mt-2 space-y-1 pl-4">
-                      {player.breakdown.map((item, i) => (
-                        <li key={i}>{item}</li>
-                      ))}
-                    </ul>
-                  </details>
+                  {player.breakdown && player.breakdown.length > 0 && (
+                    <details className="text-sm text-white/70">
+                      <summary className="cursor-pointer hover:text-white/90">
+                        View breakdown
+                      </summary>
+                      <ul className="mt-2 space-y-1 pl-4">
+                        {player.breakdown.map((item, i) => (
+                          <li key={i}>{item}</li>
+                        ))}
+                      </ul>
+                    </details>
+                  )}
                 </div>
               )
             })}

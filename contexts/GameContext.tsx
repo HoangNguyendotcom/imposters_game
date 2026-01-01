@@ -1623,6 +1623,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         role: player.role,
         totalPoints: player.totalPoints,
         survived: player.survived,
+        breakdown: player.breakdown,
       }))
 
       // Insert the game result
