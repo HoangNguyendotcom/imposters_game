@@ -1350,17 +1350,18 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     }
   }, [gameState])
 
-  // Sync game state from Supabase (non-host players)
-  const syncStateFromSupabase = useCallback(async () => {
-    if (!gameState.roomId || gameState.isHost) return
+  // Sync game state from Supabase (non-host players, or host during restore)
+  const syncStateFromSupabase = useCallback(async (forceSync = false, roomIdOverride?: string) => {
+    const roomId = roomIdOverride || gameState.roomId
+    if (!roomId || (gameState.isHost && !forceSync)) return
 
-    console.log('[syncStateFromSupabase] Fetching state for room:', gameState.roomId)
+    console.log('[syncStateFromSupabase] Fetching state for room:', roomId)
 
     try {
       const { data, error } = await supabase
         .from('room_state')
         .select('state_json, phase')
-        .eq('room_id', gameState.roomId)
+        .eq('room_id', roomId)
         .single()
 
       if (error) {
@@ -1775,8 +1776,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
       console.log('[restoreOnlineSession] Session restored successfully')
 
-      // Sync current room state from Supabase
-      await syncStateFromSupabase()
+      // Sync current room state from Supabase (force sync for both host and non-host)
+      await syncStateFromSupabase(true, session.roomId)
 
       // Fetch player role if in game
       await fetchMyRole()
@@ -1814,6 +1815,33 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     attemptRestore()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Auto-refresh: Sync state when tab becomes visible again
+  useEffect(() => {
+    if (gameState.mode !== 'online' || !gameState.roomId) return
+
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState === 'visible') {
+        console.log('[Visibility] Tab became visible, syncing state from Supabase...')
+
+        // Sync state from Supabase (works for both host and non-host)
+        await syncStateFromSupabase(gameState.isHost)
+
+        // Fetch role if needed
+        if (!gameState.myRole && gameState.phase === 'reveal-roles') {
+          await fetchMyRole()
+        }
+
+        console.log('[Visibility] State synced successfully')
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [gameState.mode, gameState.roomId, gameState.isHost, gameState.myRole, gameState.phase, syncStateFromSupabase, fetchMyRole])
 
   // Subscribe to room_players changes to detect host promotion
   useEffect(() => {

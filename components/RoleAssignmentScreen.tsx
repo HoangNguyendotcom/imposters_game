@@ -69,8 +69,8 @@ export default function RoleAssignmentScreen() {
 
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
-        {/* Quit button for non-host players */}
-        {isOnlineMode && !gameState.isHost && (
+        {/* Quit button */}
+        {isOnlineMode && (
           <button
             type="button"
             onClick={quitRoom}

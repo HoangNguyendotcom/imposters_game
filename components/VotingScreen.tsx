@@ -187,8 +187,8 @@ export default function VotingScreen() {
   if (isEliminated) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
-        {/* Quit button for non-host players */}
-        {isOnlineMode && !gameState.isHost && (
+        {/* Quit button */}
+        {isOnlineMode && (
           <button
             type="button"
             onClick={quitRoom}
@@ -341,20 +341,6 @@ export default function VotingScreen() {
               />
             </div>
           </div>
-
-          {Object.keys(onlineVotes).length > 0 && (
-            <div className="bg-white/5 rounded-lg p-4">
-              <h3 className="text-white/80 text-sm mb-3">Current vote counts:</h3>
-              <div className="space-y-2">
-                {gameState.players.map(player => (
-                  <div key={player.id} className="flex justify-between text-white/70 text-sm">
-                    <span>{player.name}</span>
-                    <span>{onlineVotes[player.id] || 0} votes</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       </div>
     )
@@ -446,8 +432,8 @@ export default function VotingScreen() {
   // Offline mode: Sequential voting
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
-      {/* Quit button for non-host players */}
-      {isOnlineMode && !gameState.isHost && (
+      {/* Quit button */}
+      {isOnlineMode && (
         <button
           type="button"
           onClick={quitRoom}

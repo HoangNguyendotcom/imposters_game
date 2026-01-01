@@ -7,6 +7,8 @@ import { useOnlineSyncWithStateUpdate } from '@/hooks/useOnlineSync'
 export default function ResultsScreen() {
   const { gameState, resetGame, playAgain, calculateResults, calculatePoints, fetchVoteHistoryFromSupabase, saveGameResultToSupabase, loadRoomGameHistory, quitRoom } = useGame()
   const [resultSaved, setResultSaved] = useState(false)
+  const [fetchedPointsBreakdown, setFetchedPointsBreakdown] = useState<any[]>([])
+  const [loadingResults, setLoadingResults] = useState(false)
 
   // Subscribe to state changes in online mode
   useOnlineSyncWithStateUpdate()
@@ -47,10 +49,30 @@ export default function ResultsScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOnlineMode, isHost, resultSaved])
 
+  // Non-host players: Fetch game results from Supabase
+  useEffect(() => {
+    if (isOnlineMode && !isHost && !loadingResults && fetchedPointsBreakdown.length === 0) {
+      setLoadingResults(true)
+      const fetchResults = async () => {
+        const history = await loadRoomGameHistory()
+        if (history && history.length > 0) {
+          // Get the most recent game result
+          const latestResult = history[0]
+          setFetchedPointsBreakdown(latestResult.player_results || [])
+          console.log('[ResultsScreen] Non-host fetched game results:', latestResult.player_results)
+        }
+        setLoadingResults(false)
+      }
+      fetchResults()
+    }
+  }, [isOnlineMode, isHost, loadingResults, fetchedPointsBreakdown, loadRoomGameHistory])
+
   // Reset flag when leaving results screen (phase changes)
   useEffect(() => {
     if (gameState.phase !== 'results') {
       setResultSaved(false)
+      setFetchedPointsBreakdown([])
+      setLoadingResults(false)
     }
   }, [gameState.phase])
 
@@ -87,8 +109,8 @@ export default function ResultsScreen() {
     console.log('[ResultsScreen] Non-host player waiting for winner to be synced from host...')
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
-        {/* Quit button for non-host players */}
-        {isOnlineMode && !gameState.isHost && (
+        {/* Quit button */}
+        {isOnlineMode && (
           <button
             type="button"
             onClick={quitRoom}
@@ -151,12 +173,27 @@ export default function ResultsScreen() {
     (winner === 'imposters' && myRole === 'imposter') ||
     (winner === 'spy' && myRole === 'spy')
 
-  // Non-host player in online mode - Show simplified results
+  // Non-host player in online mode - Show full results with points breakdown
   if (isOnlineMode && !isHost) {
+    // Calculate ranks for fetched points breakdown
+    const getRankForFetched = (player: any) => {
+      const higherScores = fetchedPointsBreakdown.filter(p => p.totalPoints > player.totalPoints)
+      const uniqueHigherScores = new Set(higherScores.map(p => p.totalPoints))
+      return uniqueHigherScores.size + 1
+    }
+
+    // Get medal icon based on rank
+    const getMedalIconForFetched = (rank: number) => {
+      if (rank === 1) return '🥇'
+      if (rank === 2) return '🥈'
+      if (rank === 3) return '🥉'
+      return ''
+    }
+
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
-        {/* Quit button for non-host players */}
-        {isOnlineMode && !gameState.isHost && (
+        {/* Quit button */}
+        {isOnlineMode && (
           <button
             type="button"
             onClick={quitRoom}
@@ -166,7 +203,7 @@ export default function ResultsScreen() {
           </button>
         )}
 
-        <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl p-8 md:p-12 max-w-md w-full border border-white/20">
+        <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl p-8 md:p-12 max-w-3xl w-full border border-white/20">
           <div className="text-center mb-8">
             <div className="text-6xl mb-4">
               {didIWin ? '🎉' : '😔'}
@@ -174,7 +211,7 @@ export default function ResultsScreen() {
             <h1 className="text-4xl font-bold text-white mb-2">
               {didIWin ? 'You Win!' : 'You Lose!'}
             </h1>
-            <p className="text-white/70 mb-4">
+            <p className="text-white/70 mb-2">
               {winner === 'civilians' ? 'Civilians Win!' : winner === 'spy' ? 'Spy Wins!' : 'Imposters Win!'}
             </p>
             <p className="text-white/60 text-sm">
@@ -187,6 +224,76 @@ export default function ResultsScreen() {
                 : 'The imposters survived!'}
             </p>
           </div>
+
+          {/* Points Leaderboard */}
+          {fetchedPointsBreakdown.length > 0 ? (
+            <div className="mb-8">
+              <h2 className="text-2xl font-bold text-white mb-4 text-center">
+                Points Breakdown
+              </h2>
+              <div className="space-y-3">
+                {fetchedPointsBreakdown.map((player: any) => {
+                  const rank = getRankForFetched(player)
+                  const medalIcon = getMedalIconForFetched(rank)
+                  const isMe = player.playerId === gameState.myPlayerId
+
+                  return (
+                    <div
+                      key={player.playerId}
+                      className={`rounded-lg p-4 border ${
+                        isMe
+                          ? 'bg-gradient-to-r from-purple-500/20 to-pink-500/20 border-purple-500/50'
+                          : rank === 1
+                          ? 'bg-white/10 border-yellow-500/50'
+                          : 'bg-white/10 border-white/20'
+                      }`}
+                    >
+                      <div className="flex justify-between items-center mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-2xl">
+                            {medalIcon}
+                          </span>
+                          <span className={`font-semibold text-lg ${isMe ? 'text-purple-200' : 'text-white'}`}>
+                            {player.playerName} {isMe && '(You)'}
+                          </span>
+                          <span className={`text-sm px-2 py-0.5 rounded ${
+                            player.role === 'imposter' ? 'bg-red-500/30 text-red-300' :
+                            player.role === 'spy' ? 'bg-purple-500/30 text-purple-300' :
+                            'bg-blue-500/30 text-blue-300'
+                          }`}>
+                            {player.role}
+                          </span>
+                          {!player.survived && (
+                            <span className="text-xs text-white/50">(eliminated)</span>
+                          )}
+                        </div>
+                        <span className="text-2xl font-bold text-yellow-300">
+                          {player.totalPoints} pts
+                        </span>
+                      </div>
+
+                      {/* Expandable breakdown */}
+                      <details className="text-sm text-white/70">
+                        <summary className="cursor-pointer hover:text-white/90">
+                          View breakdown
+                        </summary>
+                        <ul className="mt-2 space-y-1 pl-4">
+                          {player.breakdown.map((item: string, i: number) => (
+                            <li key={i}>{item}</li>
+                          ))}
+                        </ul>
+                      </details>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className="bg-white/5 rounded-lg p-8 mb-8 text-center border border-white/10">
+              <div className="text-4xl mb-2">⏳</div>
+              <p className="text-white/70">Loading points breakdown...</p>
+            </div>
+          )}
 
           <div className="bg-white/5 rounded-lg p-4 mb-6 border border-white/10">
             <p className="text-white/80 text-center">
