@@ -16,6 +16,16 @@ export default function ResultsScreen() {
   const isOnlineMode = gameState.mode === 'online'
   const isHost = gameState.isHost
 
+  // Use the winner from gameState (synced from host in online mode)
+  // For offline mode or as fallback, calculate the winner if not set
+  let winner = gameState.winner
+  if (!winner && !isOnlineMode) {
+    // Offline mode: calculate winner as fallback
+    const calculated = calculateResults()
+    winner = calculated.winner
+    console.log('[ResultsScreen] Offline mode - calculated winner as fallback:', winner)
+  }
+
   // Fetch vote history and save result in a single sequential flow (for accurate scoring)
   useEffect(() => {
     if (isOnlineMode && isHost && !resultSaved) {
@@ -105,16 +115,6 @@ export default function ResultsScreen() {
       setLoadingResults(false)
     }
   }, [gameState.phase])
-
-  // Use the winner from gameState (synced from host in online mode)
-  // For offline mode or as fallback, calculate the winner if not set
-  let winner = gameState.winner
-  if (!winner && !isOnlineMode) {
-    // Offline mode: calculate winner as fallback
-    const calculated = calculateResults()
-    winner = calculated.winner
-    console.log('[ResultsScreen] Offline mode - calculated winner as fallback:', winner)
-  }
 
   const imposters = gameState.players.filter((p) => p.role === 'imposter')
   const civilians = gameState.players.filter((p) => p.role === 'civilian')

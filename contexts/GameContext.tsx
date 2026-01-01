@@ -1155,7 +1155,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     // Clear winner before reassigning to prevent stale state
     setGameState((prev) => ({
       ...prev,
-      winner: undefined,
+      winner: null,
     }))
 
     // Reassign roles with the restored players - this generates NEW words and resets vote/elimination history
