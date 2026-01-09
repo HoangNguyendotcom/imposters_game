@@ -290,15 +290,19 @@ export default function OnlineLobbyScreen() {
         throw roomError || new Error('Không thể tạo room')
       }
 
-      const { error: playerError } = await supabase.from('room_players').insert({
-        room_id: room.id,
-        client_id: clientId,
-        name: name.trim(),
-        is_host: true,
-      })
+      const { data: playerData, error: playerError } = await supabase
+        .from('room_players')
+        .insert({
+          room_id: room.id,
+          client_id: clientId,
+          name: name.trim(),
+          is_host: true,
+        })
+        .select('id')
+        .single()
 
-      if (playerError) {
-        throw playerError
+      if (playerError || !playerData) {
+        throw playerError || new Error('Failed to create player')
       }
 
       const { error: stateError } = await supabase.from('room_state').insert({
@@ -318,6 +322,7 @@ export default function OnlineLobbyScreen() {
         roomCode: room.code,
         isHost: true,
         myName: name.trim(),
+        myPlayerId: playerData.id,
       })
       setRoomId(room.id)
       setView('choose')
@@ -394,15 +399,19 @@ export default function OnlineLobbyScreen() {
       }
 
       // Add player to room
-      const { error: playerError } = await supabase.from('room_players').insert({
-        room_id: room.id,
-        client_id: clientId,
-        name: name.trim(),
-        is_host: willBeHost,
-      })
+      const { data: playerData, error: playerError } = await supabase
+        .from('room_players')
+        .insert({
+          room_id: room.id,
+          client_id: clientId,
+          name: name.trim(),
+          is_host: willBeHost,
+        })
+        .select('id')
+        .single()
 
-      if (playerError) {
-        throw playerError
+      if (playerError || !playerData) {
+        throw playerError || new Error('Failed to join room')
       }
 
       setOnlineInfo({
@@ -410,6 +419,7 @@ export default function OnlineLobbyScreen() {
         roomCode: room.code,
         isHost: willBeHost,
         myName: name.trim(),
+        myPlayerId: playerData.id,
       })
       setRoomId(room.id)
       setView('choose')

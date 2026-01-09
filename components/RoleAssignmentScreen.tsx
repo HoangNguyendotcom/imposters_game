@@ -5,7 +5,7 @@ import { useGame } from '@/contexts/GameContext'
 import { useOnlineSyncWithStateUpdate } from '@/hooks/useOnlineSync'
 
 export default function RoleAssignmentScreen() {
-  const { gameState, startGame, revealNextPlayer, resetToRevealRoles, fetchMyRole, setPhase, quitRoom } = useGame()
+  const { gameState, startGame, revealNextPlayer, resetToRevealRoles, fetchMyRole, setPhase, quitRoom, setRolesReady } = useGame()
   const [wordRevealed, setWordRevealed] = useState(false)
   const [isLoadingRole, setIsLoadingRole] = useState(false)
 
@@ -15,13 +15,13 @@ export default function RoleAssignmentScreen() {
   const currentPlayer = gameState.players[gameState.currentRevealIndex]
   const isOnlineMode = gameState.mode === 'online'
 
-  // Fetch role for online mode
+  // Fetch role for online mode (only after rolesReady is true)
   useEffect(() => {
-    if (isOnlineMode && !gameState.myRole && gameState.roomId && gameState.myClientId) {
+    if (isOnlineMode && gameState.rolesReady && !gameState.myRole && gameState.roomId && gameState.myClientId) {
       setIsLoadingRole(true)
       fetchMyRole().finally(() => setIsLoadingRole(false))
     }
-  }, [isOnlineMode, gameState.myRole, gameState.roomId, gameState.myClientId, fetchMyRole])
+  }, [isOnlineMode, gameState.rolesReady, gameState.myRole, gameState.roomId, gameState.myClientId, fetchMyRole])
 
   useEffect(() => {
     // Reset reveal state when moving to next player
@@ -45,23 +45,105 @@ export default function RoleAssignmentScreen() {
 
   // Online mode: Show only my role
   if (isOnlineMode) {
+    // Show waiting screen for non-host players until host marks roles as ready
+    if (!gameState.rolesReady && !gameState.isHost) {
+      return (
+        <div className="min-h-screen flex items-center justify-center p-4">
+          {/* Quit button */}
+          <button
+            type="button"
+            onClick={quitRoom}
+            className="fixed top-3 left-3 z-30 rounded-full bg-red-500/40 border border-red-400/40 text-white text-sm px-4 py-2 shadow-lg backdrop-blur-md hover:bg-red-500/60 transition-all"
+          >
+            Quit Room
+          </button>
+
+          <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl p-8 md:p-12 max-w-md w-full border border-white/20 text-center">
+            <div className="text-6xl mb-4">⏳</div>
+            <p className="text-white text-xl mb-2">Waiting for host...</p>
+            <p className="text-white/60 text-sm">The host is preparing the game. Please wait.</p>
+          </div>
+        </div>
+      )
+    }
+
+    // Show ready button for host before they can view roles
+    if (!gameState.rolesReady && gameState.isHost) {
+      return (
+        <div className="min-h-screen flex items-center justify-center p-4">
+          {/* Quit button */}
+          <button
+            type="button"
+            onClick={quitRoom}
+            className="fixed top-3 left-3 z-30 rounded-full bg-red-500/40 border border-red-400/40 text-white text-sm px-4 py-2 shadow-lg backdrop-blur-md hover:bg-red-500/60 transition-all"
+          >
+            Quit Room
+          </button>
+
+          <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl p-8 md:p-12 max-w-md w-full border border-white/20 text-center">
+            <div className="text-6xl mb-4">✅</div>
+            <p className="text-white text-xl mb-2">Roles Assigned!</p>
+            <p className="text-white/60 text-sm mb-6">All players have been assigned their roles. Click the button below to let everyone view their roles.</p>
+            <button
+              onClick={setRolesReady}
+              className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold py-4 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg"
+            >
+              ✅ Ready - Let Players View Roles
+            </button>
+          </div>
+        </div>
+      )
+    }
+
     if (isLoadingRole) {
+      const handleCancelLoading = () => {
+        setIsLoadingRole(false)
+      }
+
       return (
         <div className="min-h-screen flex items-center justify-center p-4">
           <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl p-8 md:p-12 max-w-md w-full border border-white/20 text-center">
             <div className="text-6xl mb-4">⏳</div>
-            <p className="text-white text-xl">Loading your role...</p>
+            <p className="text-white text-xl mb-2">Loading your role...</p>
+            <p className="text-white/60 text-sm mb-6">Fetching your role from server</p>
+            <button
+              onClick={handleCancelLoading}
+              className="text-white/60 hover:text-white text-sm underline transition-colors"
+            >
+              Cancel
+            </button>
           </div>
         </div>
       )
     }
 
     if (!gameState.myRole || !gameState.myWord) {
+      const handleRetry = async () => {
+        setIsLoadingRole(true)
+        try {
+          await fetchMyRole()
+        } finally {
+          setIsLoadingRole(false)
+        }
+      }
+
       return (
         <div className="min-h-screen flex items-center justify-center p-4">
           <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl p-8 md:p-12 max-w-md w-full border border-white/20 text-center">
             <div className="text-6xl mb-4">❌</div>
-            <p className="text-white text-xl">Failed to load role. Please refresh.</p>
+            <p className="text-white text-xl mb-6">Failed to load role.</p>
+            <button
+              onClick={handleRetry}
+              className="w-full bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-bold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg mb-3"
+            >
+              🔄 Retry Loading Role
+            </button>
+            <button
+              onClick={quitRoom}
+              className="w-full bg-white/10 hover:bg-white/20 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 border border-white/20"
+            >
+              Quit Room
+            </button>
           </div>
         </div>
       )

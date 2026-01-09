@@ -84,6 +84,7 @@ export interface GameState {
   imposterGuessedCorrectly: boolean // true if imposters won by guessing the word
   historyRecorded: boolean // ensure history for this game is only recorded once
   winner: 'civilians' | 'imposters' | 'spy' | null // Winner of the game (synced from host in online mode)
+  rolesReady: boolean // true when host confirms roles are ready to be viewed (online mode)
   // Online metadata
   roomId: string | null
   roomCode: string | null
@@ -113,7 +114,7 @@ export interface PlayerHistoryEntry {
 interface GameContextType {
   gameState: GameState
   setGameMode: (mode: GameMode) => void
-  setOnlineInfo: (info: { roomId: string; roomCode: string; isHost: boolean; myName: string }) => void
+  setOnlineInfo: (info: { roomId: string; roomCode: string; isHost: boolean; myName: string; myPlayerId?: string }) => void
   clearOnlineInfo: () => void
   quitRoom: () => Promise<void>
   deleteRoomFromSupabase: () => Promise<void>
@@ -141,6 +142,7 @@ interface GameContextType {
   updatePlayerTurnTimer: (seconds: number) => void
   continueAfterTie: () => void
   handleImposterGuess: (guess: string) => void
+  setRolesReady: () => void
   playerHistory: PlayerHistoryEntry[]
   resetHistory: () => void
   removePlayerFromHistory: (name: string) => void
@@ -185,6 +187,7 @@ const defaultGameState: GameState = {
   imposterGuessedCorrectly: false,
   historyRecorded: false,
   winner: null,
+  rolesReady: false,
   roomId: null,
   roomCode: null,
   isHost: false,
@@ -288,13 +291,14 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     setGameState((prev) => ({ ...prev, mode }))
   }
 
-  const setOnlineInfo = (info: { roomId: string; roomCode: string; isHost: boolean; myName: string }) => {
+  const setOnlineInfo = (info: { roomId: string; roomCode: string; isHost: boolean; myName: string; myPlayerId?: string }) => {
     setGameState((prev) => ({
       ...prev,
       roomId: info.roomId,
       roomCode: info.roomCode,
       isHost: info.isHost,
       myName: info.myName,
+      myPlayerId: info.myPlayerId || prev.myPlayerId,
       mode: 'online',
     }))
   }
@@ -544,6 +548,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         allPlayersSnapshot: finalPlayers.map(p => ({ ...p })),
         timeoutHistory: [],
         winner: null,
+        rolesReady: gameState.mode === 'offline', // In offline mode, roles are immediately ready; in online mode, host must confirm
         // Clear myRole and myWord so fetchMyRole will be triggered again in online mode
         myRole: null,
         myWord: null,
@@ -594,6 +599,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         allPlayersSnapshot: finalPlayers.map(p => ({ ...p })),
         timeoutHistory: [],
         winner: null,
+        rolesReady: gameState.mode === 'offline', // In offline mode, roles are immediately ready; in online mode, host must confirm
         // Clear myRole and myWord so fetchMyRole will be triggered again in online mode
         myRole: null,
         myWord: null,
@@ -660,6 +666,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
           eliminatedPlayerId: null,
           imposterGuessedCorrectly: false,
           winner: null, // Clear winner for new game
+          rolesReady: false, // Host must mark as ready before players can view
           players: players.map(p => ({
             id: p.id,
             name: p.name,
@@ -1167,6 +1174,51 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     resetToRevealRoles()
   }
 
+  const setRolesReady = useCallback(async () => {
+    setGameState((prev) => {
+      const updated = { ...prev, rolesReady: true }
+
+      // Sync to Supabase if in online mode and is host
+      if (prev.mode === 'online' && prev.isHost && prev.roomId) {
+        // Fetch current state_json and update only rolesReady
+        const syncToSupabase = async () => {
+          try {
+            const { data, error } = await supabase
+              .from('room_state')
+              .select('state_json')
+              .eq('room_id', prev.roomId)
+              .single()
+
+            if (error) {
+              console.error('[setRolesReady] Error fetching current state:', error)
+              return
+            }
+
+            const currentState = data?.state_json || {}
+            const updatedState = { ...currentState, rolesReady: true }
+
+            const { error: updateError } = await supabase
+              .from('room_state')
+              .update({ state_json: updatedState })
+              .eq('room_id', prev.roomId)
+
+            if (updateError) {
+              console.error('[setRolesReady] Error updating state:', updateError)
+            } else {
+              console.log('[setRolesReady] Roles marked as ready and synced to Supabase')
+            }
+          } catch (err) {
+            console.error('[setRolesReady] Exception:', err)
+          }
+        }
+
+        syncToSupabase()
+      }
+
+      return updated
+    })
+  }, [])
+
   const handleImposterGuess = (guess: string) => {
     setGameState((prev) => {
       // Vietnamese classifiers/stopwords to remove
@@ -1375,6 +1427,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         eliminatedPlayerId: gameState.eliminatedPlayerId,
         imposterGuessedCorrectly: gameState.imposterGuessedCorrectly,
         winner: gameState.winner,
+        rolesReady: gameState.rolesReady,
         players: gameState.players.map(p => ({
           id: p.id,
           name: p.name,
@@ -1461,6 +1514,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
             eliminatedPlayerId: syncedState.eliminatedPlayerId ?? prev.eliminatedPlayerId,
             imposterGuessedCorrectly: syncedState.imposterGuessedCorrectly ?? prev.imposterGuessedCorrectly,
             winner: syncedState.winner ?? prev.winner,
+            rolesReady: syncedState.rolesReady ?? prev.rolesReady,
             players: syncedState.players?.map((p: any) => {
               // For non-host players, they only know their own role (from fetchMyRole)
               // Other players' roles are not synced (privacy)
@@ -2003,6 +2057,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         updatePlayerTurnTimer,
         continueAfterTie,
         handleImposterGuess,
+        setRolesReady,
         playerHistory,
         resetHistory,
         removePlayerFromHistory,
