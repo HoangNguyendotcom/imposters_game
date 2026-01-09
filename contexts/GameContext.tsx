@@ -85,6 +85,7 @@ export interface GameState {
   historyRecorded: boolean // ensure history for this game is only recorded once
   winner: 'civilians' | 'imposters' | 'spy' | null // Winner of the game (synced from host in online mode)
   rolesReady: boolean // true when host confirms roles are ready to be viewed (online mode)
+  resultsReady: boolean // true when host finishes calculating results and saves to Supabase (online mode)
   // Online metadata
   roomId: string | null
   roomCode: string | null
@@ -143,6 +144,7 @@ interface GameContextType {
   continueAfterTie: () => void
   handleImposterGuess: (guess: string) => void
   setRolesReady: () => void
+  setResultsReady: () => void
   playerHistory: PlayerHistoryEntry[]
   resetHistory: () => void
   removePlayerFromHistory: (name: string) => void
@@ -188,6 +190,7 @@ const defaultGameState: GameState = {
   historyRecorded: false,
   winner: null,
   rolesReady: false,
+  resultsReady: false,
   roomId: null,
   roomCode: null,
   isHost: false,
@@ -549,6 +552,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         timeoutHistory: [],
         winner: null,
         rolesReady: gameState.mode === 'offline', // In offline mode, roles are immediately ready; in online mode, host must confirm
+        resultsReady: false, // Reset for new game
         // Clear myRole and myWord so fetchMyRole will be triggered again in online mode
         myRole: null,
         myWord: null,
@@ -600,6 +604,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         timeoutHistory: [],
         winner: null,
         rolesReady: gameState.mode === 'offline', // In offline mode, roles are immediately ready; in online mode, host must confirm
+        resultsReady: false, // Reset for new game
         // Clear myRole and myWord so fetchMyRole will be triggered again in online mode
         myRole: null,
         myWord: null,
@@ -852,11 +857,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       if (imposters.length === 0) {
         // Spy wins if spies equal civilians
         if (prev.spyCount > 0 && spies.length > 0 && spies.length === civilians.length) {
-          return { ...prev, players: updatedPlayers, phase: 'results', eliminatedPlayerId: null, winner: 'spy' }
+          return { ...prev, players: updatedPlayers, phase: 'results', eliminatedPlayerId: null, winner: 'spy', resultsReady: prev.mode === 'offline' }
         }
         // Civilians win if all spies are also eliminated
         if (spies.length === 0) {
-          return { ...prev, players: updatedPlayers, phase: 'results', eliminatedPlayerId: null, winner: 'civilians' }
+          return { ...prev, players: updatedPlayers, phase: 'results', eliminatedPlayerId: null, winner: 'civilians', resultsReady: prev.mode === 'offline' }
         }
         // Otherwise, the game continues between spies and civilians
       }
@@ -1219,6 +1224,51 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     })
   }, [])
 
+  const setResultsReady = useCallback(async () => {
+    setGameState((prev) => {
+      const updated = { ...prev, resultsReady: true }
+
+      // Sync to Supabase if in online mode and is host
+      if (prev.mode === 'online' && prev.isHost && prev.roomId) {
+        // Fetch current state_json and update only resultsReady
+        const syncToSupabase = async () => {
+          try {
+            const { data, error } = await supabase
+              .from('room_state')
+              .select('state_json')
+              .eq('room_id', prev.roomId)
+              .single()
+
+            if (error) {
+              console.error('[setResultsReady] Error fetching current state:', error)
+              return
+            }
+
+            const currentState = data?.state_json || {}
+            const updatedState = { ...currentState, resultsReady: true }
+
+            const { error: updateError } = await supabase
+              .from('room_state')
+              .update({ state_json: updatedState })
+              .eq('room_id', prev.roomId)
+
+            if (updateError) {
+              console.error('[setResultsReady] Error updating state:', updateError)
+            } else {
+              console.log('[setResultsReady] Results marked as ready and synced to Supabase')
+            }
+          } catch (err) {
+            console.error('[setResultsReady] Exception:', err)
+          }
+        }
+
+        syncToSupabase()
+      }
+
+      return updated
+    })
+  }, [])
+
   const handleImposterGuess = (guess: string) => {
     setGameState((prev) => {
       // Vietnamese classifiers/stopwords to remove
@@ -1259,6 +1309,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
           eliminatedPlayerId: null,
           imposterGuessedCorrectly: true,
           winner: 'imposters',
+          resultsReady: prev.mode === 'offline',
         }
       }
 
@@ -1276,6 +1327,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
           imposterGuessedCorrectly: false,
           eliminatedPlayerId: null,
           winner,
+          resultsReady: prev.mode === 'offline',
         }
       }
 
@@ -1292,11 +1344,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         if (imposters.length === 0) {
           // Spy wins if spies equal civilians
           if (prev.spyCount > 0 && spies.length > 0 && spies.length === civilians.length) {
-            return { ...prev, players: updatedPlayers, phase: 'results', eliminatedPlayerId: null, winner: 'spy' }
+            return { ...prev, players: updatedPlayers, phase: 'results', eliminatedPlayerId: null, winner: 'spy', resultsReady: prev.mode === 'offline' }
           }
           // Civilians win if all spies are also eliminated
           if (spies.length === 0) {
-            return { ...prev, players: updatedPlayers, phase: 'results', eliminatedPlayerId: null, winner: 'civilians' }
+            return { ...prev, players: updatedPlayers, phase: 'results', eliminatedPlayerId: null, winner: 'civilians', resultsReady: prev.mode === 'offline' }
           }
           // Otherwise, the game continues between spies and civilians
         }
@@ -1428,6 +1480,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         imposterGuessedCorrectly: gameState.imposterGuessedCorrectly,
         winner: gameState.winner,
         rolesReady: gameState.rolesReady,
+        resultsReady: gameState.resultsReady,
         players: gameState.players.map(p => ({
           id: p.id,
           name: p.name,
@@ -1515,6 +1568,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
             imposterGuessedCorrectly: syncedState.imposterGuessedCorrectly ?? prev.imposterGuessedCorrectly,
             winner: syncedState.winner ?? prev.winner,
             rolesReady: syncedState.rolesReady ?? prev.rolesReady,
+            resultsReady: syncedState.resultsReady ?? prev.resultsReady,
             players: syncedState.players?.map((p: any) => {
               // For non-host players, they only know their own role (from fetchMyRole)
               // Other players' roles are not synced (privacy)
@@ -2020,6 +2074,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     gameState.phase,
     gameState.currentPlayerIndex,
     gameState.eliminatedPlayerId,
+    gameState.winner, // Sync when winner changes (entering results phase)
     // Don't include playerTurnTimer - we don't need to sync every second!
     // Don't include syncStateToSupabase or players to avoid infinite loop
   ])
@@ -2058,6 +2113,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         continueAfterTie,
         handleImposterGuess,
         setRolesReady,
+        setResultsReady,
         playerHistory,
         resetHistory,
         removePlayerFromHistory,

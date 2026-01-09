@@ -5,7 +5,7 @@ import { useGame } from '@/contexts/GameContext'
 import { useOnlineSyncWithStateUpdate } from '@/hooks/useOnlineSync'
 
 export default function ResultsScreen() {
-  const { gameState, resetGame, playAgain, calculateResults, calculatePoints, fetchVoteHistoryFromSupabase, saveGameResultToSupabase, loadRoomGameHistory, quitRoom } = useGame()
+  const { gameState, resetGame, playAgain, calculateResults, calculatePoints, fetchVoteHistoryFromSupabase, saveGameResultToSupabase, loadRoomGameHistory, quitRoom, setResultsReady } = useGame()
   const [resultSaved, setResultSaved] = useState(false)
   const [fetchedPointsBreakdown, setFetchedPointsBreakdown] = useState<any[]>([])
   const [loadingResults, setLoadingResults] = useState(false)
@@ -31,7 +31,7 @@ export default function ResultsScreen() {
     if (isOnlineMode && isHost && !resultSaved) {
       console.log('[ResultsScreen] Host starting result calculation flow...')
 
-      // Sequential flow: fetch votes -> calculate with fetched data -> save
+      // Sequential flow: fetch votes -> calculate with fetched data -> save -> wait -> mark ready
       const processResults = async () => {
         // Step 1: Fetch votes from Supabase (returns the voteRecords directly)
         console.log('[ResultsScreen] Step 1: Fetching vote history from Supabase...')
@@ -44,7 +44,8 @@ export default function ResultsScreen() {
 
         console.log('[ResultsScreen] Calculated points with complete vote history:', {
           voteHistoryLength: voteRecords.length,
-          pointsBreakdown: pointsBreakdown.map(p => ({ name: p.playerName, points: p.totalPoints }))
+          pointsBreakdown: pointsBreakdown.map(p => ({ name: p.playerName, points: p.totalPoints })),
+          winner
         })
 
         // Step 3: Save to Supabase
@@ -52,6 +53,15 @@ export default function ResultsScreen() {
         await saveGameResultToSupabase(pointsBreakdown, winner)
         console.log('[ResultsScreen] Game result saved to Supabase')
         setResultSaved(true)
+
+        // Step 4: Wait a moment to ensure winner is synced to all players
+        console.log('[ResultsScreen] Step 4: Waiting for winner to be synced to all players...')
+        await new Promise(resolve => setTimeout(resolve, 500))
+
+        // Step 5: Mark results as ready for other players
+        console.log('[ResultsScreen] Step 5: Marking results as ready...')
+        await setResultsReady()
+        console.log('[ResultsScreen] Results marked as ready - other players can now view')
       }
 
       processResults()
@@ -59,14 +69,11 @@ export default function ResultsScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOnlineMode, isHost, resultSaved])
 
-  // Non-host players: Fetch game results from Supabase (with retry logic)
+  // Non-host players: Fetch game results from Supabase (after resultsReady is true)
   useEffect(() => {
-    if (isOnlineMode && !isHost && !loadingResults && fetchedPointsBreakdown.length === 0 && winner) {
-      // Only start fetching after winner is synced (means host finished calculating)
+    if (isOnlineMode && !isHost && gameState.resultsReady && fetchedPointsBreakdown.length === 0) {
+      console.log('[ResultsScreen] Non-host fetching results after resultsReady signal...')
       setLoadingResults(true)
-
-      let retryCount = 0
-      const maxRetries = 10
 
       const fetchResults = async () => {
         const history = await loadRoomGameHistory()
@@ -74,38 +81,25 @@ export default function ResultsScreen() {
           // Get the most recent game result
           const latestResult = history[0]
 
-          // Verify the result matches current game (same winner)
-          if (latestResult.winner === winner && latestResult.player_results && latestResult.player_results.length > 0) {
+          if (latestResult.player_results && latestResult.player_results.length > 0) {
             setFetchedPointsBreakdown(latestResult.player_results)
             console.log('[ResultsScreen] Non-host fetched game results:', {
               winner: latestResult.winner,
               playerCount: latestResult.player_results.length,
               players: latestResult.player_results.map((p: any) => ({ name: p.playerName, role: p.role, points: p.totalPoints }))
             })
-            setLoadingResults(false)
-          } else if (retryCount < maxRetries) {
-            // Results not ready yet, retry
-            retryCount++
-            console.log(`[ResultsScreen] Results not ready, retrying (${retryCount}/${maxRetries})...`)
-            setTimeout(fetchResults, 500) // Retry after 500ms
           } else {
-            console.error('[ResultsScreen] Failed to fetch results after max retries')
-            setLoadingResults(false)
+            console.error('[ResultsScreen] No player_results in latest game result')
           }
-        } else if (retryCount < maxRetries) {
-          // No results yet, retry
-          retryCount++
-          console.log(`[ResultsScreen] No results found, retrying (${retryCount}/${maxRetries})...`)
-          setTimeout(fetchResults, 500) // Retry after 500ms
         } else {
-          console.error('[ResultsScreen] Failed to fetch results after max retries')
-          setLoadingResults(false)
+          console.error('[ResultsScreen] No game history found')
         }
+        setLoadingResults(false)
       }
 
       fetchResults()
     }
-  }, [isOnlineMode, isHost, loadingResults, fetchedPointsBreakdown, winner, loadRoomGameHistory])
+  }, [isOnlineMode, isHost, gameState.resultsReady, fetchedPointsBreakdown, loadRoomGameHistory])
 
   // Reset flag when leaving results screen (phase changes)
   useEffect(() => {
@@ -134,9 +128,13 @@ export default function ResultsScreen() {
     isHost,
   })
 
-  // In online mode, non-host players must wait for winner to be synced from host
-  if (isOnlineMode && !isHost && !winner) {
-    console.log('[ResultsScreen] Non-host player waiting for winner to be synced from host...')
+  // In online mode, non-host players must wait for resultsReady AND winner from host
+  if (isOnlineMode && !isHost && (!gameState.resultsReady || !winner)) {
+    console.log('[ResultsScreen] Non-host player waiting for host to calculate results...', {
+      resultsReady: gameState.resultsReady,
+      winner: winner,
+      myRole: gameState.myRole
+    })
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         {/* Quit button */}
@@ -154,10 +152,10 @@ export default function ResultsScreen() {
           <div className="text-center">
             <div className="text-6xl mb-4">⏳</div>
             <h1 className="text-3xl font-bold text-white mb-4">
-              Loading Results...
+              Calculating Results...
             </h1>
             <p className="text-white/70">
-              Waiting for final results from host...
+              Host is calculating final scores. Please wait...
             </p>
           </div>
         </div>
@@ -197,11 +195,31 @@ export default function ResultsScreen() {
   }
 
   // Determine if current player won (for non-host online mode)
-  const myRole = gameState.myRole
+  // Try to get myRole from gameState first, then fallback to fetched results
+  let myRole = gameState.myRole
+  if (!myRole && isOnlineMode && !isHost && fetchedPointsBreakdown.length > 0) {
+    const myPlayerResult = fetchedPointsBreakdown.find((p: any) => p.playerId === gameState.myPlayerId)
+    if (myPlayerResult) {
+      myRole = myPlayerResult.role
+      console.log('[ResultsScreen] Recovered myRole from fetched results:', myRole)
+    }
+  }
+
   const didIWin =
     (winner === 'civilians' && myRole === 'civilian') ||
     (winner === 'imposters' && myRole === 'imposter') ||
     (winner === 'spy' && myRole === 'spy')
+
+  console.log('[ResultsScreen] Win/Loss determination:', {
+    winner,
+    myRole,
+    myRoleFromGameState: gameState.myRole,
+    didIWin,
+    myPlayerId: gameState.myPlayerId,
+    isOnlineMode,
+    isHost,
+    fetchedPointsBreakdownLength: fetchedPointsBreakdown.length
+  })
 
   // Non-host player in online mode - Show full results with points breakdown
   if (isOnlineMode && !isHost) {
