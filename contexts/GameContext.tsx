@@ -1949,8 +1949,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       // Sync current room state from Supabase (force sync for both host and non-host)
       await syncStateFromSupabase(true, session.roomId)
 
-      // Fetch player role if in game
-      await fetchMyRole()
+      // Note: Don't fetch role here - RoleAssignmentScreen will handle it automatically
+      // when the state is updated and all conditions are met (rolesReady, myClientId, etc.)
 
       return true
     } catch (error) {

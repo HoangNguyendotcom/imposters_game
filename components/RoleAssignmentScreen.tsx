@@ -18,6 +18,12 @@ export default function RoleAssignmentScreen() {
   // Fetch role for online mode (only after rolesReady is true)
   useEffect(() => {
     if (isOnlineMode && gameState.rolesReady && !gameState.myRole && gameState.roomId && gameState.myClientId) {
+      console.log('[RoleAssignmentScreen] Fetching role with conditions met:', {
+        rolesReady: gameState.rolesReady,
+        myRole: gameState.myRole,
+        roomId: gameState.roomId,
+        myClientId: gameState.myClientId
+      })
       setIsLoadingRole(true)
       fetchMyRole().finally(() => setIsLoadingRole(false))
     }
@@ -119,6 +125,15 @@ export default function RoleAssignmentScreen() {
 
     if (!gameState.myRole || !gameState.myWord) {
       const handleRetry = async () => {
+        // Check if we have the required data before fetching
+        if (!gameState.roomId || !gameState.myClientId) {
+          console.error('[RoleAssignmentScreen] Cannot retry: missing roomId or myClientId', {
+            roomId: gameState.roomId,
+            myClientId: gameState.myClientId
+          })
+          return
+        }
+
         setIsLoadingRole(true)
         try {
           await fetchMyRole()
@@ -127,23 +142,45 @@ export default function RoleAssignmentScreen() {
         }
       }
 
+      // Show different error message if clientId is not initialized
+      const canRetry = gameState.roomId && gameState.myClientId
+      const errorMessage = canRetry
+        ? 'Failed to load role.'
+        : 'Connection not ready yet...'
+
       return (
         <div className="min-h-screen flex items-center justify-center p-4">
           <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl p-8 md:p-12 max-w-md w-full border border-white/20 text-center">
-            <div className="text-6xl mb-4">❌</div>
-            <p className="text-white text-xl mb-6">Failed to load role.</p>
-            <button
-              onClick={handleRetry}
-              className="w-full bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-bold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg mb-3"
-            >
-              🔄 Retry Loading Role
-            </button>
-            <button
-              onClick={quitRoom}
-              className="w-full bg-white/10 hover:bg-white/20 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 border border-white/20"
-            >
-              Quit Room
-            </button>
+            <div className="text-6xl mb-4">{canRetry ? '❌' : '⏳'}</div>
+            <p className="text-white text-xl mb-2">{errorMessage}</p>
+            {!canRetry && (
+              <p className="text-white/60 text-sm mb-6">
+                Initializing connection... Please wait a moment.
+              </p>
+            )}
+            {canRetry ? (
+              <>
+                <button
+                  onClick={handleRetry}
+                  className="w-full bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-bold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg mb-3"
+                >
+                  🔄 Retry Loading Role
+                </button>
+                <button
+                  onClick={quitRoom}
+                  className="w-full bg-white/10 hover:bg-white/20 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 border border-white/20"
+                >
+                  Quit Room
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={quitRoom}
+                className="w-full bg-red-500/40 hover:bg-red-500/60 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 border border-red-400/40 mt-4"
+              >
+                Quit Room
+              </button>
+            )}
           </div>
         </div>
       )
