@@ -2018,41 +2018,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     }
   }, [gameState.mode, gameState.roomId, gameState.isHost, gameState.myRole, gameState.phase, syncStateFromSupabase, fetchMyRole])
 
-  // Subscribe to room_players changes to detect host promotion
-  useEffect(() => {
-    if (gameState.mode !== 'online' || !gameState.roomId || !gameState.myPlayerId) return
-
-    console.log('[GameContext] Subscribing to room_players for host promotion detection')
-
-    const channel = supabase
-      .channel(`room_players_host:${gameState.roomId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'room_players',
-          filter: `room_id=eq.${gameState.roomId}`,
-        },
-        async (payload) => {
-          // Check if the updated player is me and if I became host
-          const updatedPlayer = payload.new as any
-          if (updatedPlayer.id === gameState.myPlayerId && updatedPlayer.is_host && !gameState.isHost) {
-            console.log('[GameContext] Detected host promotion! Updating local state...')
-            setGameState((prev) => ({
-              ...prev,
-              isHost: true,
-            }))
-          }
-        }
-      )
-      .subscribe()
-
-    return () => {
-      console.log('[GameContext] Unsubscribing from room_players_host')
-      supabase.removeChannel(channel)
-    }
-  }, [gameState.mode, gameState.roomId, gameState.myPlayerId, gameState.isHost])
+  // Note: Host promotion is no longer used - the original room creator is always the host
+  // This subscription is removed as we no longer dynamically promote players to host
 
   // Auto-sync state to Supabase when host makes changes
   useEffect(() => {

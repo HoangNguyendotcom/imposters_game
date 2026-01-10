@@ -78,18 +78,6 @@ export default function OnlineLobbyScreen() {
       }
       if (!isCancelled && data) {
         setLobbyPlayers(data as RoomPlayer[])
-
-        // Check if current player became the host
-        const myPlayer = data.find((p) => p.id === gameState.myPlayerId)
-        if (myPlayer && myPlayer.is_host && !gameState.isHost && gameState.roomId && gameState.roomCode && gameState.myName) {
-          console.log('[OnlineLobbyScreen] You have been promoted to host!')
-          setOnlineInfo({
-            roomId: gameState.roomId,
-            roomCode: gameState.roomCode,
-            isHost: true,
-            myName: gameState.myName,
-          })
-        }
       }
     }
 
@@ -161,78 +149,13 @@ export default function OnlineLobbyScreen() {
   }
 
   // Helper function to remove player from any previous rooms
+  // Note: We no longer promote other players to host - the original room creator is always the host
   const leavePreviousRooms = async () => {
     try {
       console.log('[leavePreviousRooms] Starting cleanup for client_id:', clientId)
 
-      // First, check if this player is a host in any room
-      const { data: myPlayerRecords, error: fetchError } = await supabase
-        .from('room_players')
-        .select('room_id, is_host, id')
-        .eq('client_id', clientId)
-
-      if (fetchError) {
-        console.error('[leavePreviousRooms] Error fetching player records:', fetchError)
-        throw fetchError
-      }
-
-      console.log('[leavePreviousRooms] Found player records:', myPlayerRecords?.length || 0)
-
-      // For each room where this player is the host, promote another player
-      if (myPlayerRecords && myPlayerRecords.length > 0) {
-        for (const record of myPlayerRecords) {
-          console.log('[leavePreviousRooms] Processing room:', record.room_id, 'is_host:', record.is_host)
-
-          if (record.is_host) {
-            console.log('[leavePreviousRooms] Player is host in room:', record.room_id, '- finding replacement...')
-
-            // Find another player in the same room to promote
-            const { data: otherPlayers, error: otherPlayersError } = await supabase
-              .from('room_players')
-              .select('id, client_id, name')
-              .eq('room_id', record.room_id)
-              .neq('client_id', clientId)
-              .order('created_at', { ascending: true })
-              .limit(1)
-
-            if (otherPlayersError) {
-              console.error('[leavePreviousRooms] Error finding other players:', otherPlayersError)
-              continue
-            }
-
-            if (otherPlayers && otherPlayers.length > 0) {
-              const newHost = otherPlayers[0]
-              console.log('[leavePreviousRooms] Promoting', newHost.name, 'to host')
-
-              // Update the room's host_id
-              const { error: roomUpdateError } = await supabase
-                .from('rooms')
-                .update({ host_id: newHost.client_id })
-                .eq('id', record.room_id)
-
-              if (roomUpdateError) {
-                console.error('[leavePreviousRooms] Error updating room host_id:', roomUpdateError)
-              }
-
-              // Update the new host's is_host flag
-              const { error: playerUpdateError } = await supabase
-                .from('room_players')
-                .update({ is_host: true })
-                .eq('id', newHost.id)
-
-              if (playerUpdateError) {
-                console.error('[leavePreviousRooms] Error updating player is_host:', playerUpdateError)
-              } else {
-                console.log('[leavePreviousRooms] Successfully promoted new host:', newHost.name)
-              }
-            } else {
-              console.log('[leavePreviousRooms] No other players in room, room will be empty')
-            }
-          }
-        }
-      }
-
-      // Now remove this player from all rooms
+      // Simply remove this player from all rooms without promoting anyone
+      // The room's host_id remains unchanged (original creator stays as host)
       console.log('[leavePreviousRooms] Deleting all room_players records for client_id:', clientId)
       const { error: deleteError } = await supabase
         .from('room_players')
@@ -365,38 +288,16 @@ export default function OnlineLobbyScreen() {
         return
       }
 
-      // Check how many players are currently in the room
-      const { data: existingPlayers, error: playersError } = await supabase
-        .from('room_players')
-        .select('id')
-        .eq('room_id', room.id)
-
-      if (playersError) {
-        throw playersError
-      }
-
-      // If room is empty, this player becomes the new host
-      const isFirstPlayer = !existingPlayers || existingPlayers.length === 0
-      const willBeHost = isFirstPlayer
+      // Check if the joining player is the original host
+      // The room's host_id is set when the room is created and never changes
+      const willBeHost = room.host_id === clientId
 
       console.log('[handleJoinRoom] Joining room:', {
         roomCode: room.code,
-        existingPlayers: existingPlayers?.length || 0,
+        roomHostId: room.host_id,
+        myClientId: clientId,
         willBeHost,
       })
-
-      // If becoming host, update the room's host_id
-      if (willBeHost) {
-        const { error: updateError } = await supabase
-          .from('rooms')
-          .update({ host_id: clientId })
-          .eq('id', room.id)
-
-        if (updateError) {
-          console.error('[handleJoinRoom] Error updating host_id:', updateError)
-          // Don't throw - continue anyway
-        }
-      }
 
       // Add player to room
       const { data: playerData, error: playerError } = await supabase
@@ -438,7 +339,7 @@ export default function OnlineLobbyScreen() {
       }
 
       if (willBeHost) {
-        console.log('[handleJoinRoom] You are now the host of this room!')
+        console.log('[handleJoinRoom] You are the host of this room (original creator)')
       }
     } catch (err: any) {
       // eslint-disable-next-line no-console
