@@ -31,6 +31,7 @@ export default function SetupScreen() {
   )
 
   const isOnline = gameState.mode === 'online'
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false)
 
   // Imposter options based on player count:
   // If players < 7: max 1 imposter
@@ -104,13 +105,23 @@ export default function SetupScreen() {
       setSpyCount(finalSpyCount)
 
       if (isOnline) {
-        // Online: tên đã có từ room_players, bỏ qua NameCollectionScreen
-        startGame(undefined, imposters, finalSpyCount)
+        // Online: Show confirmation dialog before starting
+        setShowConfirmDialog(true)
       } else {
         // Offline: host sẽ nhập tên ở NameCollectionScreen
         setPhase('names')
       }
     }
+  }
+
+  const handleConfirmStart = () => {
+    // Online: tên đã có từ room_players, bỏ qua NameCollectionScreen
+    startGame(undefined, imposters, spyCount)
+    setShowConfirmDialog(false)
+  }
+
+  const handleCancelStart = () => {
+    setShowConfirmDialog(false)
   }
 
   return (
@@ -377,6 +388,45 @@ export default function SetupScreen() {
             Get Started!!!
           </button>
         </form>
+
+        {/* Confirmation Dialog for Online Mode */}
+        {showConfirmDialog && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl p-6 md:p-8 max-w-md w-full border border-white/20">
+              <h3 className="text-2xl font-bold text-white text-center mb-4">
+                Ready to Start?
+              </h3>
+              <div className="bg-white/5 rounded-lg p-4 mb-6 border border-white/10">
+                <p className="text-white/90 text-sm mb-3 text-center">
+                  Game settings:
+                </p>
+                <ul className="text-white/80 text-sm space-y-2">
+                  <li>👥 <span className="font-semibold">{count}</span> players</li>
+                  <li>🎭 <span className="font-semibold">{imposters}</span> imposter{imposters !== 1 ? 's' : ''}</li>
+                  <li>🕵️ <span className="font-semibold">{spyCount}</span> spy{spyCount !== 1 ? 'ies' : ''}</li>
+                  <li>⏱️ {timerEnabled ? `${timerMinutes} minute${timerMinutes !== 1 ? 's' : ''} per round` : 'No timer'}</li>
+                </ul>
+                <p className="text-yellow-300/90 text-xs mt-4 text-center">
+                  ⚠️ Make sure everyone is ready!
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={handleCancelStart}
+                  className="flex-1 bg-white/10 hover:bg-white/20 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-200 border border-white/20"
+                >
+                  Back to Settings
+                </button>
+                <button
+                  onClick={handleConfirmStart}
+                  className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-3 px-4 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg"
+                >
+                  Start Game!
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
