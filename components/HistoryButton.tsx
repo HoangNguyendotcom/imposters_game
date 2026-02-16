@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from 'react'
 import { useGame } from '@/contexts/GameContext'
 
 export default function HistoryButton() {
-  const { gameState, playerHistory, resetHistory, removePlayerFromHistory, loadRoomGameHistory } = useGame()
+  const { gameState, playerHistory, resetHistory, removePlayerFromHistory, loadRoomGameHistory, offlineGameHistory, resetOfflineGameHistory } = useGame()
   const [isOpen, setIsOpen] = useState(false)
   const [roomGameHistory, setRoomGameHistory] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
@@ -29,7 +29,7 @@ export default function HistoryButton() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, isOnlineMode, hasRoomId])
 
-  const hasHistory = isOnlineMode ? roomGameHistory.length > 0 : playerHistory.length > 0
+  const hasHistory = isOnlineMode ? roomGameHistory.length > 0 : offlineGameHistory.length > 0
 
   const sortedHistory = useMemo(
     () =>
@@ -37,9 +37,10 @@ export default function HistoryButton() {
     [playerHistory]
   )
 
-  // Calculate cumulative player stats from room game history
+  // Calculate cumulative player stats from game history (both online and offline)
   const playerStats = useMemo(() => {
-    if (!isOnlineMode || roomGameHistory.length === 0) return []
+    const gameHistory = isOnlineMode ? roomGameHistory : offlineGameHistory
+    if (gameHistory.length === 0) return []
 
     const statsMap = new Map<string, {
       name: string
@@ -50,7 +51,7 @@ export default function HistoryButton() {
       spyWins: number
     }>()
 
-    roomGameHistory.forEach((game) => {
+    gameHistory.forEach((game: any) => {
       game.player_results.forEach((player: any) => {
         const existing = statsMap.get(player.playerName) || {
           name: player.playerName,
@@ -78,7 +79,7 @@ export default function HistoryButton() {
     })
 
     return Array.from(statsMap.values()).sort((a, b) => b.totalPoints - a.totalPoints)
-  }, [isOnlineMode, roomGameHistory])
+  }, [isOnlineMode, roomGameHistory, offlineGameHistory])
 
   return (
     <>
@@ -109,12 +110,12 @@ export default function HistoryButton() {
               <p className="text-xs text-white/70">
                 {isOnlineMode
                   ? 'Lịch sử các game đã chơi trong phòng này.'
-                  : 'Lưu điểm số và số lần chiến thắng của từng người chơi theo vai trò (Civilian / Imposter / Spy).'}
+                  : 'Lịch sử các game đã chơi trên thiết bị này.'}
               </p>
               {!isOnlineMode && (
                 <button
                   type="button"
-                  onClick={resetHistory}
+                  onClick={resetOfflineGameHistory}
                   disabled={!hasHistory}
                   className="text-xs px-3 py-1 rounded-full border border-red-400/80 bg-red-600/10 text-red-200 hover:bg-red-600/30 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
@@ -132,7 +133,7 @@ export default function HistoryButton() {
                     ? 'Chưa có game nào trong phòng này. Hãy chơi một ván để bắt đầu!'
                     : 'Chưa có dữ liệu nào. Hãy chơi vài ván để bắt đầu ghi lịch sử!'}
                 </p>
-              ) : isOnlineMode ? (
+              ) : (
                 <div className="space-y-6">
                   {/* Player Stats Summary Table */}
                   {playerStats.length > 0 && (
@@ -192,7 +193,7 @@ export default function HistoryButton() {
                   {/* Individual Game Results */}
                   <div className="space-y-4">
                     <h3 className="text-white font-semibold text-sm">Game History</h3>
-                    {roomGameHistory.map((game, index) => (
+                    {(isOnlineMode ? roomGameHistory : offlineGameHistory).map((game, index) => (
                     <div key={game.id} className="bg-slate-900/90 border border-slate-700/80 rounded-lg p-4">
                       <div className="flex items-center justify-between mb-3">
                         <h3 className="text-white font-semibold">
@@ -253,67 +254,6 @@ export default function HistoryButton() {
                     </div>
                   ))}
                   </div>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full text-sm text-left text-white/80 border-separate border-spacing-y-1">
-                    <thead>
-                      <tr className="bg-slate-800/90 text-xs uppercase tracking-wide text-white/70">
-                        <th className="px-4 py-2 rounded-l-lg">Player</th>
-                        <th className="px-3 py-2 text-center">Total Points</th>
-                        <th className="px-3 py-2 text-center">Games</th>
-                        <th className="px-3 py-2 text-center">Wins (C/I/S)</th>
-                        <th className="px-3 py-2 rounded-r-lg text-center">Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {sortedHistory.map((entry) => {
-                        const totalWins =
-                          entry.civilianWins + entry.imposterWins + entry.spyWins
-
-                        return (
-                          <tr
-                            key={entry.name}
-                            className="bg-slate-900/90 hover:bg-slate-800/90 transition-colors border border-slate-700/80"
-                          >
-                            <td className="px-4 py-2 rounded-l-lg">
-                              <div className="flex flex-col">
-                                <span className="text-white font-semibold">{entry.name}</span>
-                              </div>
-                            </td>
-                            <td className="px-3 py-2 text-center">
-                              <span className="text-yellow-300 font-bold text-base">
-                                {entry.totalPoints || 0}
-                              </span>
-                            </td>
-                            <td className="px-3 py-2 text-center">
-                              <span className="text-white/80">
-                                {entry.gamesPlayed || 0}
-                              </span>
-                            </td>
-                            <td className="px-3 py-2 text-center">
-                              <div className="flex gap-1 justify-center text-xs">
-                                <span className="text-blue-300">{entry.civilianWins}C</span>
-                                <span className="text-white/40">/</span>
-                                <span className="text-red-300">{entry.imposterWins}I</span>
-                                <span className="text-white/40">/</span>
-                                <span className="text-purple-300">{entry.spyWins}S</span>
-                              </div>
-                            </td>
-                            <td className="px-3 py-2 rounded-r-lg text-center">
-                              <button
-                                type="button"
-                                onClick={() => removePlayerFromHistory(entry.name)}
-                                className="text-[11px] text-red-200 hover:text-red-100 border border-red-400/80 rounded-full px-3 py-1 bg-red-600/10 hover:bg-red-600/30"
-                              >
-                                Xóa
-                              </button>
-                            </td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
                 </div>
               )}
             </div>

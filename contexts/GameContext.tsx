@@ -112,6 +112,24 @@ export interface PlayerHistoryEntry {
   gamesPlayed: number
 }
 
+export interface OfflineGameResult {
+  id: string
+  game_number: number
+  winner: 'civilians' | 'imposters' | 'spy'
+  civilian_word: string | null
+  spy_word: string | null
+  imposter_hint: string | null
+  created_at: string
+  player_results: {
+    playerId: string
+    playerName: string
+    role: PlayerRole
+    totalPoints: number
+    survived: boolean
+    breakdown: string[]
+  }[]
+}
+
 interface GameContextType {
   gameState: GameState
   setGameMode: (mode: GameMode) => void
@@ -148,6 +166,8 @@ interface GameContextType {
   playerHistory: PlayerHistoryEntry[]
   resetHistory: () => void
   removePlayerFromHistory: (name: string) => void
+  offlineGameHistory: OfflineGameResult[]
+  resetOfflineGameHistory: () => void
   // Online sync functions
   syncStateToSupabase: () => Promise<void>
   syncStateFromSupabase: () => Promise<void>
@@ -167,6 +187,7 @@ const GameContext = createContext<GameContextType | undefined>(undefined)
 
 const STORAGE_KEY = 'imposters_game_state'
 const HISTORY_STORAGE_KEY = 'imposters_game_history'
+const GAME_HISTORY_STORAGE_KEY = 'imposters_game_results'
 const ONLINE_SESSION_KEY = 'imposters_online_session'
 
 const defaultGameState: GameState = {
@@ -209,6 +230,7 @@ const defaultGameState: GameState = {
 export function GameProvider({ children }: { children: React.ReactNode }) {
   const [gameState, setGameState] = useState<GameState>(defaultGameState)
   const [playerHistory, setPlayerHistory] = useState<PlayerHistoryEntry[]>([])
+  const [offlineGameHistory, setOfflineGameHistory] = useState<OfflineGameResult[]>([])
 
   // Will restore online session later (after functions are defined)
 
@@ -231,6 +253,17 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       }
     } catch {
       // ignore malformed history
+    }
+
+    // Load offline game history
+    try {
+      const storedGameHistory = localStorage.getItem(GAME_HISTORY_STORAGE_KEY)
+      if (storedGameHistory) {
+        const parsed = JSON.parse(storedGameHistory) as OfflineGameResult[]
+        setOfflineGameHistory(parsed)
+      }
+    } catch {
+      // ignore malformed game history
     }
     // Online mode: Room-specific game history is loaded via loadRoomGameHistory()
   }, [])
@@ -285,6 +318,64 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const removePlayerFromHistory = useCallback((name: string) => {
     persistHistory(playerHistory.filter((entry) => entry.name !== name))
   }, [playerHistory, persistHistory])
+
+  // Helper to persist offline game history
+  const persistOfflineGameHistory = useCallback((next: OfflineGameResult[]) => {
+    setOfflineGameHistory(next)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(GAME_HISTORY_STORAGE_KEY, JSON.stringify(next))
+    }
+  }, [])
+
+  const resetOfflineGameHistory = useCallback(() => {
+    persistOfflineGameHistory([])
+  }, [persistOfflineGameHistory])
+
+  const saveGameResultToLocalStorage = useCallback((pointsBreakdown: PlayerPointsBreakdown[], winner: 'civilians' | 'imposters' | 'spy') => {
+    if (gameState.mode !== 'offline') {
+      console.log('[saveGameResultToLocalStorage] Skipping - not offline mode')
+      return
+    }
+
+    console.log('[saveGameResultToLocalStorage] Saving game result to localStorage')
+
+    try {
+      // Get the current game number
+      const gameNumber = offlineGameHistory.length > 0
+        ? Math.max(...offlineGameHistory.map(g => g.game_number)) + 1
+        : 1
+
+      // Prepare player results
+      const playerResults = pointsBreakdown.map((player) => ({
+        playerId: player.playerId,
+        playerName: player.playerName,
+        role: player.role,
+        totalPoints: player.totalPoints,
+        survived: player.survived,
+        breakdown: player.breakdown,
+      }))
+
+      // Create the game result
+      const gameResult: OfflineGameResult = {
+        id: `offline-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+        game_number: gameNumber,
+        winner: winner,
+        civilian_word: gameState.civilianWord,
+        spy_word: gameState.spyWord,
+        imposter_hint: gameState.imposterHint,
+        created_at: new Date().toISOString(),
+        player_results: playerResults,
+      }
+
+      // Add to history
+      const updatedHistory = [...offlineGameHistory, gameResult]
+      persistOfflineGameHistory(updatedHistory)
+
+      console.log('[saveGameResultToLocalStorage] Game result saved successfully as game #', gameNumber)
+    } catch (error) {
+      console.error('[saveGameResultToLocalStorage] Error:', error)
+    }
+  }, [gameState.mode, gameState.civilianWord, gameState.spyWord, gameState.imposterHint, offlineGameHistory, persistOfflineGameHistory])
 
   const setPlayerCount = (count: number) => {
     setGameState((prev) => ({ ...prev, playerCount: count }))
@@ -1427,9 +1518,13 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     })
 
     persistHistory(updatedHistory)
+
+    // Save detailed game result to localStorage (for offline mode)
+    saveGameResultToLocalStorage(pointsBreakdown, winner)
+
     setGameState((prev) => ({ ...prev, historyRecorded: true }))
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gameState.phase, gameState.historyRecorded, calculateResults, calculatePoints, playerHistory, persistHistory, gameState.mode, gameState.isHost])
+  }, [gameState.phase, gameState.historyRecorded, calculateResults, calculatePoints, playerHistory, persistHistory, gameState.mode, gameState.isHost, saveGameResultToLocalStorage])
 
   // ====================
   // Online Sync Functions
@@ -2084,6 +2179,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         playerHistory,
         resetHistory,
         removePlayerFromHistory,
+        offlineGameHistory,
+        resetOfflineGameHistory,
         // Online sync functions
         syncStateToSupabase,
         syncStateFromSupabase,
